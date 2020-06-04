@@ -208,13 +208,19 @@
     <Compile Include="Common\DBHelper.cs" />
     <Compile Include="Common\FunctionHelper.cs" />
     <Compile Include="Common\LogHelper.cs" />
+    <Compile Include="Controllers\FeedController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
+    <Compile Include="Domains\FeedDomain.cs" />
     <Compile Include="Domains\LoginDomain.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\BUS_CAREERPATH_FIRST.cs" />
+    <Compile Include="Models\BUS_CAREERPATH_SECOND.cs" />
+    <Compile Include="Models\BUS_CAREERPATH_THIRD.cs" />
+    <Compile Include="Models\ReceiveModel\FeedPathModel.cs" />
     <Compile Include="Models\RetJsonModel.cs" />
     <Compile Include="Models\ReturnModels\LoginReturnModel.cs" />
     <Compile Include="Models\USER_ACCOUNT.cs" />
@@ -274,7 +280,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="NewFolder1\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="fonts\glyphicons-halflings-regular.woff2" />

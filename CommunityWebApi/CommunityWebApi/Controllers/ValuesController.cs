@@ -15,7 +15,7 @@ namespace CommunityWebApi.Controllers
         public IHttpActionResult Get()
         {
             long aa = FunctionHelper.GetTimestamp();
-            return Json(aa);
+            return Json("牛逼");
         }
 
         // GET api/values/5

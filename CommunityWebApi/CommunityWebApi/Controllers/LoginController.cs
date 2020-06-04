@@ -20,7 +20,7 @@ namespace CommunityWebApi.Controllers
         [HttpPost]
         public IHttpActionResult PostRegist([FromBody]dynamic value)
         {
-            string UserId = Convert.ToString(value.userid);
+            string UserId = Convert.ToString(value.user_id);
             string PassWord = Convert.ToString(value.password);
             LoginDomain LD = new LoginDomain();
             var result = LD.Register(UserId, PassWord);
@@ -36,7 +36,7 @@ namespace CommunityWebApi.Controllers
         [HttpPost]
         public IHttpActionResult PostLogin([FromBody]dynamic value)
         {
-            string UserId = Convert.ToString(value.userid);
+            string UserId = Convert.ToString(value.user_id);
             string PassWord = Convert.ToString(value.password);
             LoginDomain LD = new LoginDomain();
             var result = LD.Login(UserId, PassWord);
