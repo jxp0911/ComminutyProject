@@ -55,5 +55,11 @@ namespace Entitys
         /// 
         /// </summary>
         public System.String USER_ID { get { return this._USER_ID; } set { this._USER_ID = value; } }
+
+        private System.Int32 _TIMESTAMP_INT;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.Int32 TIMESTAMP_INT { get { return this._TIMESTAMP_INT; } set { this._TIMESTAMP_INT = value; } }
     }
 }

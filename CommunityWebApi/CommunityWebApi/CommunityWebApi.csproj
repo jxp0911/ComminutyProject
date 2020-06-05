@@ -221,9 +221,12 @@
     <Compile Include="Models\BUS_CAREERPATH_SECOND.cs" />
     <Compile Include="Models\BUS_CAREERPATH_THIRD.cs" />
     <Compile Include="Models\ReceiveModel\FeedPathModel.cs" />
-    <Compile Include="Models\RetJsonModel.cs" />
+    <Compile Include="Models\ReturnModels\RetJsonModel.cs" />
+    <Compile Include="Models\ReturnModels\FeedReturnModel.cs" />
     <Compile Include="Models\ReturnModels\LoginReturnModel.cs" />
-    <Compile Include="Models\USER_ACCOUNT.cs" />
+    <Compile Include="Models\SYS_USER_INFO.cs" />
+    <Compile Include="Models\SYS_USER_PERMISSION.cs" />
+    <Compile Include="Models\SYS_USER_ACCOUNT.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -22,5 +22,14 @@ namespace CommunityWebApi.Controllers
             var result = FD.FeedPath(UserId, feedModel);
             return Json(result);
         }
+
+        [Route("bus/feed/getfeed")]
+        [HttpGet]
+        public IHttpActionResult Get(int cursor, int count)
+        {
+            FeedDomain FD = new FeedDomain();
+            var result = FD.GetFeedPath(cursor, count);
+            return Json(result);
+        }
     }
 }

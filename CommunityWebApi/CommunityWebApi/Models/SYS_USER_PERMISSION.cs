@@ -5,12 +5,12 @@ namespace Entitys
     /// <summary>
     /// 
     /// </summary>
-    public class BUS_CAREERPATH_FIRST
+    public class SYS_USER_PERMISSION
     {
         /// <summary>
         /// 
         /// </summary>
-        public BUS_CAREERPATH_FIRST()
+        public SYS_USER_PERMISSION()
         {
         }
 
@@ -38,11 +38,17 @@ namespace Entitys
         /// </summary>
         public System.String STATE { get { return this._STATE; } set { this._STATE = value; } }
 
-        private System.String _TITLE;
+        private System.String _PERMISSION_NAME;
         /// <summary>
         /// 
         /// </summary>
-        public System.String TITLE { get { return this._TITLE; } set { this._TITLE = value; } }
+        public System.String PERMISSION_NAME { get { return this._PERMISSION_NAME; } set { this._PERMISSION_NAME = value; } }
+
+        private System.String _PERMISSION_DESC;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String PERMISSION_DESC { get { return this._PERMISSION_DESC; } set { this._PERMISSION_DESC = value; } }
 
         private System.String _USER_ID;
         /// <summary>

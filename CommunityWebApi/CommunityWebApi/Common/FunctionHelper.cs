@@ -11,13 +11,13 @@ namespace CommunityWebApi.Common
         /// 获取服务器当前时间戳
         /// </summary>
         /// <returns></returns>
-        public static long GetTimestamp()
+        public static int GetTimestamp()
         {
             try
             {
                 var db = DBContext.GetInstance;
                 string sql = "select unix_timestamp(now())";
-                long timestamp = db.Ado.SqlQuerySingle<long>(sql);
+                int timestamp = db.Ado.SqlQuerySingle<int>(sql);
                 return timestamp;
             }
             catch (Exception ex)

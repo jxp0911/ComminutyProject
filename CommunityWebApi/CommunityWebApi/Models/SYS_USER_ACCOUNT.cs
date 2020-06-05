@@ -5,12 +5,12 @@ namespace Entitys
     /// <summary>
     /// 
     /// </summary>
-    public class BUS_CAREERPATH_FIRST
+    public class SYS_USER_ACCOUNT
     {
         /// <summary>
         /// 
         /// </summary>
-        public BUS_CAREERPATH_FIRST()
+        public SYS_USER_ACCOUNT()
         {
         }
 
@@ -38,17 +38,17 @@ namespace Entitys
         /// </summary>
         public System.String STATE { get { return this._STATE; } set { this._STATE = value; } }
 
-        private System.String _TITLE;
+        private System.String _ACCOUNT_NUMBER;
         /// <summary>
         /// 
         /// </summary>
-        public System.String TITLE { get { return this._TITLE; } set { this._TITLE = value; } }
+        public System.String ACCOUNT_NUMBER { get { return this._ACCOUNT_NUMBER; } set { this._ACCOUNT_NUMBER = value; } }
 
-        private System.String _USER_ID;
+        private System.String _PASSWORD;
         /// <summary>
         /// 
         /// </summary>
-        public System.String USER_ID { get { return this._USER_ID; } set { this._USER_ID = value; } }
+        public System.String PASSWORD { get { return this._PASSWORD; } set { this._PASSWORD = value; } }
 
         private System.Int32 _TIMESTAMP_INT;
         /// <summary>
