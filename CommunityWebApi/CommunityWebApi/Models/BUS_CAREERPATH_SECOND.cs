@@ -61,5 +61,11 @@ namespace Entitys
         /// 
         /// </summary>
         public System.Int32 TIMESTAMP_INT { get { return this._TIMESTAMP_INT; } set { this._TIMESTAMP_INT = value; } }
+
+        private System.Int32 _STATUS;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.Int32 STATUS { get { return this._STATUS; } set { this._STATUS = value; } }
     }
 }

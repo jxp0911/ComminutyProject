@@ -5,12 +5,12 @@ namespace Entitys
     /// <summary>
     /// 
     /// </summary>
-    public class SYS_USER_PERMISSION
+    public class SYS_FAIL_LOG
     {
         /// <summary>
         /// 
         /// </summary>
-        public SYS_USER_PERMISSION()
+        public SYS_FAIL_LOG()
         {
         }
 
@@ -38,23 +38,47 @@ namespace Entitys
         /// </summary>
         public System.String STATE { get { return this._STATE; } set { this._STATE = value; } }
 
-        private System.String _PERMISSION_CODE;
+        private System.String _CONTROLLER_NAME;
         /// <summary>
         /// 
         /// </summary>
-        public System.String PERMISSION_CODE { get { return this._PERMISSION_CODE; } set { this._PERMISSION_CODE = value; } }
+        public System.String CONTROLLER_NAME { get { return this._CONTROLLER_NAME; } set { this._CONTROLLER_NAME = value; } }
 
-        private System.String _PERMISSION_DESC;
+        private System.String _FUN_NAME;
         /// <summary>
         /// 
         /// </summary>
-        public System.String PERMISSION_DESC { get { return this._PERMISSION_DESC; } set { this._PERMISSION_DESC = value; } }
+        public System.String FUN_NAME { get { return this._FUN_NAME; } set { this._FUN_NAME = value; } }
 
-        private System.String _USER_ID;
+        private System.String _URL;
         /// <summary>
         /// 
         /// </summary>
-        public System.String USER_ID { get { return this._USER_ID; } set { this._USER_ID = value; } }
+        public System.String URL { get { return this._URL; } set { this._URL = value; } }
+
+        private System.String _INTERFACE_DESC;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String INTERFACE_DESC { get { return this._INTERFACE_DESC; } set { this._INTERFACE_DESC = value; } }
+
+        private System.String _RECEIVE_DATA;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String RECEIVE_DATA { get { return this._RECEIVE_DATA; } set { this._RECEIVE_DATA = value; } }
+
+        private System.String _FAIL_MSG;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String FAIL_MSG { get { return this._FAIL_MSG; } set { this._FAIL_MSG = value; } }
+
+        private System.String _REQUEST_TYPE;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String REQUEST_TYPE { get { return this._REQUEST_TYPE; } set { this._REQUEST_TYPE = value; } }
 
         private System.Int32 _TIMESTAMP_INT;
         /// <summary>

@@ -19,6 +19,8 @@ namespace CommunityWebApi.Models
         public string UserId { get; set; }
         [JsonProperty(PropertyName = "datetime_created")]
         public int TIMESTAMP { get; set; }
+        [JsonProperty(PropertyName = "first_id")]
+        public string FIRST_ID { get; set; }
         [JsonProperty(PropertyName = "user_info")]
         public UserInfoReturnModel UserInfo { get; set; } = new UserInfoReturnModel();
         [JsonProperty(PropertyName = "second_list")]

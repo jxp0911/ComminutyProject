@@ -207,6 +207,7 @@
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="Common\DBHelper.cs" />
     <Compile Include="Common\FunctionHelper.cs" />
+    <Compile Include="Common\IInterceptorInerface.cs" />
     <Compile Include="Common\LogHelper.cs" />
     <Compile Include="Controllers\FeedController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -224,6 +225,7 @@
     <Compile Include="Models\ReturnModels\RetJsonModel.cs" />
     <Compile Include="Models\ReturnModels\FeedReturnModel.cs" />
     <Compile Include="Models\ReturnModels\LoginReturnModel.cs" />
+    <Compile Include="Models\SYS_FAIL_LOG.cs" />
     <Compile Include="Models\SYS_USER_INFO.cs" />
     <Compile Include="Models\SYS_USER_PERMISSION.cs" />
     <Compile Include="Models\SYS_USER_ACCOUNT.cs" />
