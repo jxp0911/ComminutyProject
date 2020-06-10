@@ -34,7 +34,7 @@ namespace CommunityWebApi.Controllers
             catch (Exception ex)
             {
                 //记录错误日志
-                FunctionHelper.SaveFailLog("Login", "PostRegist", "api/login/regist", "注册接口", Convert.ToString(value), ex.InnerException.Message.ToString(), "POST");
+                FunctionHelper.SaveFailLog("Login", "PostRegist", "api/login/regist", "注册接口", Convert.ToString(value), ex.Message.ToString(), "POST");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
@@ -64,7 +64,7 @@ namespace CommunityWebApi.Controllers
             catch (Exception ex)
             {
                 //记录错误日志
-                FunctionHelper.SaveFailLog("Login", "PostLogin", "api/login/login", "登录接口", Convert.ToString(value), ex.InnerException.Message.ToString(), "POST");
+                FunctionHelper.SaveFailLog("Login", "PostLogin", "api/login/login", "登录接口", Convert.ToString(value), ex.Message.ToString(), "POST");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
@@ -74,7 +74,7 @@ namespace CommunityWebApi.Controllers
         }
 
         /// <summary>
-        /// 登录
+        /// 验证账号登录状态
         /// </summary>
         /// <param name="value"></param>
         /// <returns></returns>
@@ -93,12 +93,42 @@ namespace CommunityWebApi.Controllers
             catch (Exception ex)
             {
                 //记录失败日志
-                FunctionHelper.SaveFailLog("Login", "PostIsLogin", "api/login/status", "验证账号是否处在登陆中", Convert.ToString(value), ex.InnerException.Message.ToString(), "POST");
+                FunctionHelper.SaveFailLog("Login", "PostIsLogin", "api/login/status", "验证账号是否处在登陆中", Convert.ToString(value), ex.Message.ToString(), "POST");
 
                 result.status = 0;
                 result.msg = "请重试";
                 result.time = FunctionHelper.GetTimestamp();
                 result.data = false;
+                return Json(result);
+            }
+
+        }
+
+        /// <summary>
+        /// 获取账号所有权限
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [Route("api/login/per")]
+        [HttpGet]
+        public IHttpActionResult GetPermission(string user_id)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                LoginDomain LD = new LoginDomain();
+                result = LD.GetRolePermission(user_id);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Login", "GetPermission", "api/login/per", "获取当前账号拥有的权限", "当前登录用户ID：" + user_id, ex.Message.ToString(), "POST");
+
+                result.status = 0;
+                result.msg = "请重试";
+                result.time = FunctionHelper.GetTimestamp();
+                result.data = new List<string>();
                 return Json(result);
             }
 

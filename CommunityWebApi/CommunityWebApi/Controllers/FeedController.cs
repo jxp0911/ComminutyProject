@@ -29,7 +29,7 @@ namespace CommunityWebApi.Controllers
             catch (Exception ex)
             {
                 //记录失败日志
-                FunctionHelper.SaveFailLog("Feed", "PostFeed", "bus/feed/save", "发文接口", Convert.ToString(value), ex.InnerException.Message.ToString(), "POST");
+                FunctionHelper.SaveFailLog("Feed", "PostFeed", "bus/feed/save", "发文接口", Convert.ToString(value), ex.Message.ToString(), "POST");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
@@ -53,7 +53,7 @@ namespace CommunityWebApi.Controllers
             catch (Exception ex)
             {
                 //记录失败日志
-                FunctionHelper.SaveFailLog("Feed", "Get", "bus/feed/getfeed", "获取Feed信息", "已经获取的卡片数量:" + cursor + ";本次请求的卡片数量:" + count + "请求的feed状态" + status, ex.InnerException.Message.ToString(), "GET");
+                FunctionHelper.SaveFailLog("Feed", "Get", "bus/feed/getfeed", "获取Feed信息", "已经获取的卡片数量:" + cursor + ";本次请求的卡片数量:" + count + "请求的feed状态" + status, ex.Message.ToString(), "GET");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
@@ -81,7 +81,7 @@ namespace CommunityWebApi.Controllers
             catch (Exception ex)
             {
                 //记录失败日志
-                FunctionHelper.SaveFailLog("Feed", "PostAduit", "bus/feed/aduit", "审批职业路径接口", Convert.ToString(value), ex.InnerException.Message.ToString(), "POST");
+                FunctionHelper.SaveFailLog("Feed", "PostAduit", "bus/feed/aduit", "审批职业路径接口", Convert.ToString(value), ex.Message.ToString(), "POST");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();

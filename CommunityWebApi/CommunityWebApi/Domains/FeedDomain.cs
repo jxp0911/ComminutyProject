@@ -262,7 +262,7 @@ namespace CommunityWebApi.Domains
                 foreach (var item in firstData)
                 {
                     FeedFirstReturnModel firstModel = new FeedFirstReturnModel();
-                    firstModel.Type = 1;
+                    firstModel.Type = 3;
                     firstModel.TIMESTAMP = item.TIMESTAMP_INT;
                     firstModel.TITLE = item.TITLE;
                     firstModel.UserId = item.USER_ID;

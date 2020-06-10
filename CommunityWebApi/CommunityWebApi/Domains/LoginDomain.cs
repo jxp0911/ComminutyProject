@@ -149,7 +149,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                DateTime now = db.GetDate();
                 //返给前台的JSON实体
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();
@@ -169,6 +168,32 @@ namespace CommunityWebApi.Domains
                     jsonModel.msg = "账号未登录";
                     jsonModel.data = false;
                 }
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+
+        public RetJsonModel GetRolePermission(string userId)
+        {
+            var db = DBContext.GetInstance;
+            try
+            {
+                //返给前台的JSON实体
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = FunctionHelper.GetTimestamp();
+
+                List<string> data = db.Queryable<SYS_USER_PERMISSION>()
+                    .Where(x => x.USER_ID == userId && x.STATE == "A")
+                    .Select(x => x.PERMISSION_CODE).ToList();
+
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = data;
+
                 return jsonModel;
             }
             catch (Exception ex)
