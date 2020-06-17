@@ -5,12 +5,12 @@ namespace Entitys
     /// <summary>
     /// 
     /// </summary>
-    public class BUS_CAREERPATH_SECOND
+    public class MAP_USER_CARREERPATH
     {
         /// <summary>
         /// 
         /// </summary>
-        public BUS_CAREERPATH_SECOND()
+        public MAP_USER_CARREERPATH()
         {
         }
 
@@ -38,40 +38,22 @@ namespace Entitys
         /// </summary>
         public System.String STATE { get { return this._STATE; } set { this._STATE = value; } }
 
-        private System.String _TITLE;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.String TITLE { get { return this._TITLE; } set { this._TITLE = value; } }
-
-        private System.String _FIRST_ID;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.String FIRST_ID { get { return this._FIRST_ID; } set { this._FIRST_ID = value; } }
-
         private System.String _USER_ID;
         /// <summary>
         /// 
         /// </summary>
         public System.String USER_ID { get { return this._USER_ID; } set { this._USER_ID = value; } }
 
+        private System.String _CP_FIRST_ID;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String CP_FIRST_ID { get { return this._CP_FIRST_ID; } set { this._CP_FIRST_ID = value; } }
+
         private System.Int32 _TIMESTAMP_INT;
         /// <summary>
         /// 
         /// </summary>
         public System.Int32 TIMESTAMP_INT { get { return this._TIMESTAMP_INT; } set { this._TIMESTAMP_INT = value; } }
-
-        private System.Int32 _STATUS;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.Int32 STATUS { get { return this._STATUS; } set { this._STATUS = value; } }
-
-        private System.Int32 _FAVOUR_COUNT;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.Int32 FAVOUR_COUNT { get { return this._FAVOUR_COUNT; } set { this._FAVOUR_COUNT = value; } }
     }
 }

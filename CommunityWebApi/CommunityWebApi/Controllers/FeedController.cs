@@ -41,19 +41,19 @@ namespace CommunityWebApi.Controllers
 
         [Route("bus/feed/getfeed")]
         [HttpGet]
-        public IHttpActionResult Get(int cursor, int count,int status)
+        public IHttpActionResult Get(string uid,int cursor, int count,int status)
         {
             RetJsonModel result = new RetJsonModel();
             try
             {
                 FeedDomain FD = new FeedDomain();
-                result = FD.GetFeedPath(cursor, count, status);
+                result = FD.GetFeedPath(uid, cursor, count, status);
                 return Json(result);
             }
             catch (Exception ex)
             {
                 //记录失败日志
-                FunctionHelper.SaveFailLog("Feed", "Get", "bus/feed/getfeed", "获取Feed信息", "已经获取的卡片数量:" + cursor + ";本次请求的卡片数量:" + count + "请求的feed状态" + status, ex.Message.ToString(), "GET");
+                FunctionHelper.SaveFailLog("Feed", "Get", "bus/feed/getfeed", "获取Feed信息", "用户ID：" + uid + "已经获取的卡片数量:" + cursor + ";本次请求的卡片数量:" + count + "请求的feed状态" + status, ex.Message.ToString(), "GET");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
@@ -82,6 +82,31 @@ namespace CommunityWebApi.Controllers
             {
                 //记录失败日志
                 FunctionHelper.SaveFailLog("Feed", "PostAduit", "bus/feed/aduit", "审批职业路径接口", Convert.ToString(value), ex.Message.ToString(), "POST");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "失败，请重试";
+                return Json(result);
+            }
+
+        }
+
+
+        [Route("bus/feed/detailed")]
+        [HttpGet]
+        public IHttpActionResult GetDetailedPage(string user_id, string path_id)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                FeedDomain FD = new FeedDomain();
+                result = FD.GetPathDetailedInfo(user_id, path_id);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Feed", "GetDetailedPage", "bus/feed/detailed", "获取职业路径详情页接口", "用户ID："+user_id+"；职业路径ID：" + path_id, ex.Message.ToString(), "GET");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();

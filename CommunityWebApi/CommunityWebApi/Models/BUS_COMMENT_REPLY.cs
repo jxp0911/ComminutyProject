@@ -5,12 +5,12 @@ namespace Entitys
     /// <summary>
     /// 
     /// </summary>
-    public class BUS_CAREERPATH_SECOND
+    public class BUS_COMMENT_REPLY
     {
         /// <summary>
         /// 
         /// </summary>
-        public BUS_CAREERPATH_SECOND()
+        public BUS_COMMENT_REPLY()
         {
         }
 
@@ -38,40 +38,46 @@ namespace Entitys
         /// </summary>
         public System.String STATE { get { return this._STATE; } set { this._STATE = value; } }
 
-        private System.String _TITLE;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.String TITLE { get { return this._TITLE; } set { this._TITLE = value; } }
-
-        private System.String _FIRST_ID;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.String FIRST_ID { get { return this._FIRST_ID; } set { this._FIRST_ID = value; } }
-
-        private System.String _USER_ID;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.String USER_ID { get { return this._USER_ID; } set { this._USER_ID = value; } }
-
         private System.Int32 _TIMESTAMP_INT;
         /// <summary>
         /// 
         /// </summary>
         public System.Int32 TIMESTAMP_INT { get { return this._TIMESTAMP_INT; } set { this._TIMESTAMP_INT = value; } }
 
-        private System.Int32 _STATUS;
+        private System.String _COMMENT_ID;
         /// <summary>
         /// 
         /// </summary>
-        public System.Int32 STATUS { get { return this._STATUS; } set { this._STATUS = value; } }
+        public System.String COMMENT_ID { get { return this._COMMENT_ID; } set { this._COMMENT_ID = value; } }
 
-        private System.Int32 _FAVOUR_COUNT;
+        private System.String _REPLY_ID;
         /// <summary>
         /// 
         /// </summary>
-        public System.Int32 FAVOUR_COUNT { get { return this._FAVOUR_COUNT; } set { this._FAVOUR_COUNT = value; } }
+        public System.String REPLY_ID { get { return this._REPLY_ID; } set { this._REPLY_ID = value; } }
+
+        private System.String _REPLY_TYPE;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String REPLY_TYPE { get { return this._REPLY_TYPE; } set { this._REPLY_TYPE = value; } }
+
+        private System.String _CONTENT;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String CONTENT { get { return this._CONTENT; } set { this._CONTENT = value; } }
+
+        private System.String _FROM_UID;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String FROM_UID { get { return this._FROM_UID; } set { this._FROM_UID = value; } }
+
+        private System.String _TO_UID;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.String TO_UID { get { return this._TO_UID; } set { this._TO_UID = value; } }
     }
 }

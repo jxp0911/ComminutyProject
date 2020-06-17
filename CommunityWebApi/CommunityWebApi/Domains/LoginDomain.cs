@@ -106,10 +106,12 @@ namespace CommunityWebApi.Domains
                 {
                     if(data.PASSWORD == passWord)
                     {
-                        db.Updateable<SYS_USER_ACCOUNT>().UpdateColumns(x => new 
+                        db.Updateable<SYS_USER_ACCOUNT>().SetColumns(x => new SYS_USER_ACCOUNT()
                         {
-                            STATUS = 1
+                            STATUS = 1,
+                            DATETIME_MODIFIED = now
                         }).Where(x => x.ID == data.ID).ExecuteCommand();
+
                         LoginReturnModel lrm = new LoginReturnModel();
                         lrm.user_info = new RetModel
                         {

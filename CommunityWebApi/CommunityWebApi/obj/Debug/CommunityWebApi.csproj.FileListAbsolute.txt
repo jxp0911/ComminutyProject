@@ -94,6 +94,7 @@ D:\程序员社区\CommunityWebApi\CommunityWebApi\bin\Renci.SshNet.xml
 D:\程序员社区\CommunityWebApi\CommunityWebApi\bin\System.Buffers.xml
 D:\程序员社区\CommunityWebApi\CommunityWebApi\bin\System.Memory.xml
 D:\程序员社区\CommunityWebApi\CommunityWebApi\bin\System.Runtime.CompilerServices.Unsafe.xml
+F:\ComminutyProject\CommunityWebApi\CommunityWebApi\obj\Debug\CommunityWebApi.csproj.CoreCompileInputs.cache
 F:\ComminutyProject\CommunityWebApi\CommunityWebApi\bin\CommunityWebApi.dll.config
 F:\ComminutyProject\CommunityWebApi\CommunityWebApi\bin\CommunityWebApi.dll
 F:\ComminutyProject\CommunityWebApi\CommunityWebApi\bin\CommunityWebApi.pdb
@@ -186,7 +187,6 @@ F:\ComminutyProject\CommunityWebApi\CommunityWebApi\bin\zh-Hans\System.Web.Razor
 F:\ComminutyProject\CommunityWebApi\CommunityWebApi\bin\zh-Hans\System.Web.WebPages.resources.dll
 F:\ComminutyProject\CommunityWebApi\CommunityWebApi\bin\zh-Hans\System.Web.WebPages.Deployment.resources.dll
 F:\ComminutyProject\CommunityWebApi\CommunityWebApi\bin\zh-Hans\System.Web.WebPages.Razor.resources.dll
-F:\ComminutyProject\CommunityWebApi\CommunityWebApi\obj\Debug\CommunityWebApi.csproj.CoreCompileInputs.cache
 F:\ComminutyProject\CommunityWebApi\CommunityWebApi\obj\Debug\CommunityWebApi.csproj.CopyComplete
 F:\ComminutyProject\CommunityWebApi\CommunityWebApi\obj\Debug\CommunityWebApi.dll
 F:\ComminutyProject\CommunityWebApi\CommunityWebApi\obj\Debug\CommunityWebApi.pdb

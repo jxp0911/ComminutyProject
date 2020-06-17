@@ -5,12 +5,12 @@ namespace Entitys
     /// <summary>
     /// 
     /// </summary>
-    public class BUS_CAREERPATH_SECOND
+    public class BUS_USER_FAVOUR
     {
         /// <summary>
         /// 
         /// </summary>
-        public BUS_CAREERPATH_SECOND()
+        public BUS_USER_FAVOUR()
         {
         }
 
@@ -38,17 +38,17 @@ namespace Entitys
         /// </summary>
         public System.String STATE { get { return this._STATE; } set { this._STATE = value; } }
 
-        private System.String _TITLE;
+        private System.Int32 _TIMESTAMP_INT;
         /// <summary>
         /// 
         /// </summary>
-        public System.String TITLE { get { return this._TITLE; } set { this._TITLE = value; } }
+        public System.Int32 TIMESTAMP_INT { get { return this._TIMESTAMP_INT; } set { this._TIMESTAMP_INT = value; } }
 
-        private System.String _FIRST_ID;
+        private System.String _TYPE_ID;
         /// <summary>
         /// 
         /// </summary>
-        public System.String FIRST_ID { get { return this._FIRST_ID; } set { this._FIRST_ID = value; } }
+        public System.String TYPE_ID { get { return this._TYPE_ID; } set { this._TYPE_ID = value; } }
 
         private System.String _USER_ID;
         /// <summary>
@@ -56,22 +56,10 @@ namespace Entitys
         /// </summary>
         public System.String USER_ID { get { return this._USER_ID; } set { this._USER_ID = value; } }
 
-        private System.Int32 _TIMESTAMP_INT;
+        private System.Int32 _TYPE;
         /// <summary>
         /// 
         /// </summary>
-        public System.Int32 TIMESTAMP_INT { get { return this._TIMESTAMP_INT; } set { this._TIMESTAMP_INT = value; } }
-
-        private System.Int32 _STATUS;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.Int32 STATUS { get { return this._STATUS; } set { this._STATUS = value; } }
-
-        private System.Int32 _FAVOUR_COUNT;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.Int32 FAVOUR_COUNT { get { return this._FAVOUR_COUNT; } set { this._FAVOUR_COUNT = value; } }
+        public System.Int32 TYPE { get { return this._TYPE; } set { this._TYPE = value; } }
     }
 }

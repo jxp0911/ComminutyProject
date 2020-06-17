@@ -212,16 +212,23 @@
     <Compile Include="Controllers\FeedController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
+    <Compile Include="Controllers\UserController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Domains\FeedDomain.cs" />
     <Compile Include="Domains\LoginDomain.cs" />
+    <Compile Include="Domains\UserDomain.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
+    <Compile Include="Models\BUS_CAREERPATH_COMMENT.cs" />
     <Compile Include="Models\BUS_CAREERPATH_FIRST.cs" />
     <Compile Include="Models\BUS_CAREERPATH_SECOND.cs" />
     <Compile Include="Models\BUS_CAREERPATH_THIRD.cs" />
+    <Compile Include="Models\BUS_COMMENT_REPLY.cs" />
+    <Compile Include="Models\BUS_USER_FAVOUR.cs" />
+    <Compile Include="Models\MAP_USER_CARREERPATH.cs" />
     <Compile Include="Models\ReceiveModel\FeedPathModel.cs" />
+    <Compile Include="Models\ReturnModels\CommentReturnModel.cs" />
     <Compile Include="Models\ReturnModels\RetJsonModel.cs" />
     <Compile Include="Models\ReturnModels\FeedReturnModel.cs" />
     <Compile Include="Models\ReturnModels\LoginReturnModel.cs" />
