@@ -18,16 +18,27 @@ namespace CommunityWebApi.Domains
         /// <param name="userId">用户ID</param>
         /// <param name="feedModel">职业路径三级信息</param>
         /// <returns></returns>
-        public RetJsonModel FeedPath(string userId, FeedPathFirstModel feedModel)
+        public RetJsonModel PostPath(string userId, FeedPathFirstModel feedModel)
         {
+            if(!string.IsNullOrEmpty(feedModel.TOPIC_ID)&& !string.IsNullOrEmpty(feedModel.FAQ_ID))
+            {
+                throw new Exception("不能同时发布话题和问答");
+            }
             var db = DBContext.GetInstance;
             try
             {
-                DateTime now = db.GetDate();
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                if(!string.IsNullOrEmpty(feedModel.TOPIC_ID))
+                    FunctionHelper.VerifyInfo(db, feedModel.TOPIC_ID, "TOPIC");
+                if (!string.IsNullOrEmpty(feedModel.FAQ_ID))
+                    FunctionHelper.VerifyInfo(db, feedModel.FAQ_ID, "FAQ");
 
-                RetJsonModel jsonModel = new RetJsonModel();
+                DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
+                RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
+
                 //判断当前用户是否拥有发文的权限
                 int isRelease = db.Queryable<SYS_USER_PERMISSION>()
                     .Where(x => x.USER_ID == userId && x.STATE == "A" && x.PERMISSION_CODE == "RELEASE")
@@ -50,6 +61,27 @@ namespace CommunityWebApi.Domains
                 first.STATUS = 2;
                 db.Insertable(first).ExecuteCommand();
 
+                if (!string.IsNullOrEmpty(feedModel.TOPIC_ID))
+                {
+                    MAP_PATH_TOPIC pt = new MAP_PATH_TOPIC();
+                    pt.ID = Guid.NewGuid().ToString();
+                    pt.DATETIME_CREATED = now;
+                    pt.STATE = "A";
+                    pt.FIRST_PATH_ID = first.ID;
+                    pt.TOPIC_ID = feedModel.TOPIC_ID;
+                    db.Insertable(pt).ExecuteCommand();
+                }
+                if (!string.IsNullOrEmpty(feedModel.FAQ_ID))
+                {
+                    MAP_PATH_FAQ pf = new MAP_PATH_FAQ();
+                    pf.ID = Guid.NewGuid().ToString();
+                    pf.DATETIME_CREATED = now;
+                    pf.STATE = "A";
+                    pf.FIRST_PATH_ID = first.ID;
+                    pf.FAQ_ID = feedModel.FAQ_ID;
+                    db.Insertable(pf).ExecuteCommand();
+                }
+
                 foreach (var item in feedModel.SecondList)
                 {
                     BUS_CAREERPATH_SECOND second = new BUS_CAREERPATH_SECOND();
@@ -61,8 +93,11 @@ namespace CommunityWebApi.Domains
                     second.USER_ID = userId;
                     second.TIMESTAMP_INT = timestamp;
                     second.STATUS = 2;
+                    second.VERSION_NO = 1;
                     db.Insertable(second).ExecuteCommand();
 
+                    if (item.ThirdList == null)
+                        continue;
                     foreach(var item2 in item.ThirdList)
                     {
                         BUS_CAREERPATH_THIRD third = new BUS_CAREERPATH_THIRD();
@@ -75,13 +110,16 @@ namespace CommunityWebApi.Domains
                         third.USER_ID = userId;
                         third.TIMESTAMP_INT = timestamp;
                         third.STATUS = 2;
+                        third.VERSION_NO = 1;
                         db.Insertable(third).ExecuteCommand();
                     }
                 }
-                db.Ado.CommitTran();
 
                 jsonModel.status = 1;
                 jsonModel.msg = "提交成功";
+
+                db.Ado.CommitTran();
+
                 return jsonModel;
             }
             catch (Exception ex)
@@ -96,28 +134,90 @@ namespace CommunityWebApi.Domains
         /// </summary>
         /// <param name="cursor">已经返回的数据条数</param>
         /// <param name="count">前台需要的数据条数</param>
+        /// <param name="status">状态(1:审核通过；2：待审核)</param>
+        /// <param name="topicId">话题ID</param>
+        /// <param name="faqId">问答ID</param>
+        /// <param name="isOwn">是否是个人关注页</param>
         /// <returns></returns>
-        public RetJsonModel GetFeedPath(string userId,int cursor,int count,int status)
+        public RetJsonModel GetFeedPath(string userId,int cursor,int count,int status,string topicId,string faqId, bool isOwn)
         {
             var db = DBContext.GetInstance;
             try
             {
+                if (!string.IsNullOrEmpty(userId))
+                    FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                if (!string.IsNullOrEmpty(topicId))
+                    FunctionHelper.VerifyInfo(db, topicId, "TOPIC");
+                if (!string.IsNullOrEmpty(faqId))
+                    FunctionHelper.VerifyInfo(db, faqId, "FAQ");
+
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();
 
-                #region 数据验证
-                Tuple<bool, string> verify = FunctionHelper.Verify(userId);
-                if (verify.Item1 == false)
+                List<string> fIdList = null;
+                if (isOwn)
                 {
-                    jsonModel.status = 0;
-                    jsonModel.msg = verify.Item2;
-                    return jsonModel;
+                    fIdList = new List<string>();
+                    fIdList = db.Queryable<MAP_USER_CARREERPATH>()
+                        .Where(x => x.USER_ID == userId && x.STATE == "A")
+                        .Select(x => x.CP_FIRST_ID).ToList();
+                    if (fIdList.Count == 0)
+                        fIdList = null;
                 }
-                #endregion
+                List<FeedFirstReturnModel> path_list = GetFeedInfo(db, userId, cursor, count, status, fIdList, topicId, faqId);
+                //判断是否还有更多职业规划
+                var pathCount = db.Queryable<BUS_CAREERPATH_FIRST>()
+                    .Where(x => x.STATUS == status && x.STATE == "A")
+                    .WhereIF(!string.IsNullOrEmpty(topicId), $"ID in (select a.FIRST_PATH_ID from MAP_PATH_TOPIC a where a.TOPIC_ID='{topicId}')")
+                    .WhereIF(!string.IsNullOrEmpty(faqId), $"ID in (select b.FIRST_PATH_ID from MAP_PATH_FAQ b where b.FAQ_ID='{faqId}')")
+                    .Count();
+                bool has_more = true;
+                if (path_list.Count + cursor >= pathCount)
+                {
+                    has_more = false;
+                }
+
+                //将查询出的评论插入到职业路径的数据结构中
+                foreach (var item1 in path_list)
+                {
+                    //查询一级职业规划点赞量最多的评论
+                    item1.CommentInfo = new
+                    {
+                        comment_list = GetCommentByPath(userId, item1.ID, 2, 1, false, 0, 1, out bool hasMore),
+                        has_more = hasMore
+                    };
+
+                    foreach(var item2 in item1.SecondList)
+                    {
+                        item2.CommentInfo = new
+                        {
+                            comment_list = GetCommentByPath(userId, item2.ID, 2, 2, false, 0, 1, out hasMore),
+                            has_more = hasMore
+                        };
+                        foreach (var item3 in item2.ThirdList)
+                        {
+                            item3.CommentInfo = new
+                            {
+                                comment_list = GetCommentByPath(userId, item2.ID, 2, 3, false, 0, 1, out hasMore),
+                                has_more = hasMore
+                            };
+                        }
+                    }
+                }
+                if(string.IsNullOrEmpty(topicId) && string.IsNullOrEmpty(faqId) && isOwn == false)
+                {
+                    FeedFirstReturnModel model = GetFaqs(db);
+                    if (model != null)
+                        path_list.Insert(0, model);
+                }
 
                 jsonModel.status = 1;
                 jsonModel.msg = "成功";
-                jsonModel.data = GetFeedInfo(db, userId, cursor, count, status);
+                jsonModel.data = new
+                {
+                    path_list,
+                    has_more
+                };
                 return jsonModel;
             }
             catch (Exception ex)
@@ -127,6 +227,280 @@ namespace CommunityWebApi.Domains
         }
 
         /// <summary>
+        /// 审核/下架接口
+        /// </summary>
+        /// <param name="firstId">父级ID集合</param>
+        /// <param name="isPass">是否通过（0:未通过；1:通过）</param>
+        /// <returns></returns>
+        public RetJsonModel AuditPath(List<string> firstId,int isPass,string userId)
+        {
+            var db = DBContext.GetInstance;
+            try
+            {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+
+                DateTime now = db.GetDate();
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = FunctionHelper.GetTimestamp();
+
+                //验证当前用户是否有审核的权限
+                var isCheck = db.Queryable<SYS_USER_PERMISSION>()
+                    .Where(x => x.USER_ID == userId && x.STATE == "A" && x.PERMISSION_CODE == "CHECK")
+                    .Count();
+                if (isCheck == 0)
+                {
+                    jsonModel.status = 0;
+                    jsonModel.msg = "您没有审核权限";
+                    return jsonModel;
+                }
+
+                db.Ado.BeginTran();
+                db.Updateable<BUS_CAREERPATH_FIRST>().SetColumns(x => new BUS_CAREERPATH_FIRST()
+                {
+                    STATUS = isPass,
+                    DATETIME_MODIFIED = now
+                }).Where(x => firstId.Contains(x.ID) && x.STATE == "A").ExecuteCommand();
+
+                db.Updateable<BUS_CAREERPATH_SECOND>().SetColumns(x => new BUS_CAREERPATH_SECOND()
+                {
+                    STATUS = isPass,
+                    DATETIME_MODIFIED = now
+                }).Where(x => firstId.Contains(x.FIRST_ID) && x.STATE == "A").ExecuteCommand();
+
+                db.Updateable<BUS_CAREERPATH_THIRD>().SetColumns(x => new BUS_CAREERPATH_THIRD()
+                {
+                    STATUS = isPass,
+                    DATETIME_MODIFIED = now
+                }).Where(x => firstId.Contains(x.FIRST_ID) && x.STATE == "A").ExecuteCommand();
+                db.Ado.CommitTran();
+
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                db.Ado.RollbackTran();
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 查询职业路径详情页
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="pathId">职业路径ID</param>
+        /// <returns></returns>
+        public RetJsonModel GetPathDetailedInfo(string userId, string pathId)
+        {
+            var db = DBContext.GetInstance;
+            try
+            {
+                //数据校验
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                }
+                FunctionHelper.VerifyInfo(db, pathId, "ANY_PATH");
+
+                DateTime now = db.GetDate();
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = FunctionHelper.GetTimestamp();
+
+                //当前是只有查询所有三级信息的需求
+                List<string> IdList = new List<string>();
+                IdList.Add(pathId);
+                //查询职业规划信息
+                FeedFirstReturnModel pathInfo = GetFeedInfo(db, userId, 0, 1, 1, IdList).FirstOrDefault();
+                //查询一级职业规划的所有评论
+                bool hasMore = false;
+                pathInfo.CommentInfo = new
+                {
+                    comment_list = GetCommentByPath(userId, pathId, 2, 1, true, 0, 5, out hasMore),
+                    has_more = hasMore
+                };
+
+                //将查询出的评论插入到职业路径的数据结构中
+                foreach (var item in pathInfo.SecondList)
+                {
+                    //查询5个点赞最多的二级规划的评论
+                    item.CommentInfo = new
+                    {
+                        comment_list = GetCommentByPath(userId, item.ID, 2, 2, true, 0, 5, out hasMore),
+                        has_more = hasMore
+                    };
+                    item.ModifyInfo = new
+                    {
+                        modify_list = GetModifyInfo(userId, item.ID, 2, 0, 1, false, out bool hasHistory2),
+                        has_history = hasHistory2
+                    };
+
+                    foreach (var it in item.ThirdList)
+                    {
+                        //查询5个点赞最多的三级规划的评论
+                        it.CommentInfo = new
+                        {
+                            comment_list = GetCommentByPath(userId, it.ID, 2, 3, true, 0, 5, out hasMore),
+                            has_more = hasMore
+                        };
+                        it.ModifyInfo = new
+                        {
+                            modify_list = GetModifyInfo(userId, it.ID, 3, 0, 1, false, out bool hasHistory3),
+                            has_history = hasHistory3
+                        };
+                    }
+                }
+
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = pathInfo;
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 修改某一级职业规划
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="pathId">职业规划ID</param>
+        /// <param name="pathClass">这也规划等级</param>
+        /// <param name="content">修改内容</param>
+        /// <returns></returns>
+        public RetJsonModel ModifyPath(string userId,string pathId,int pathClass,string content)
+        {
+            var db = DBContext.GetInstance;
+            try
+            {
+                DateTime now = db.GetDate();
+                int timestamp = FunctionHelper.GetTimestamp();
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = timestamp;
+
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, pathId, FunctionHelper.GetDescByCode(pathClass));
+                int count = db.Queryable<BUS_MODIFY_PATH>()
+                    .Where(x => x.PATH_ID == pathId && x.PATH_CLASS == pathClass && x.STATE == "A" && x.IS_MERGE == "N")
+                    .Count();
+                if (count > 0)
+                {
+                    jsonModel.status = 0;
+                    jsonModel.msg = "此级职业规划已经有正在讨论中的修改";
+                    return jsonModel;
+                }
+
+                db.Ado.BeginTran();
+                //插入修改职业路径表
+                BUS_MODIFY_PATH modModel = new BUS_MODIFY_PATH();
+                modModel.ID = Guid.NewGuid().ToString();
+                modModel.DATETIME_CREATED = now;
+                modModel.STATE = "A";
+                modModel.TIMESTAMP_INT = timestamp;
+                modModel.USER_ID = userId;
+                modModel.PATH_ID = pathId;
+                modModel.PATH_CLASS = pathClass;
+                modModel.CONTENT = content;
+                modModel.IS_MERGE = "N";
+                db.Insertable(modModel).ExecuteCommand();
+                //插入职业规划修改审核人表
+                BUS_PATH_REVIEWER reModel = new BUS_PATH_REVIEWER();
+                reModel.ID = Guid.NewGuid().ToString();
+                reModel.DATETIME_CREATED = now;
+                reModel.STATE = "A";
+                reModel.TIMESTAMP_INT = timestamp;
+                reModel.USER_ID = userId;
+                reModel.MODIFY_PATH_ID = modModel.ID;
+                reModel.IS_AGREE = 0;
+                db.Insertable(reModel).ExecuteCommand();
+
+                db.Ado.CommitTran();
+
+                jsonModel.status = 1;
+                jsonModel.msg = "发表成功";
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                db.Ado.RollbackTran();
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 获取某级职业规划的历史修改
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="pathId">职业规划ID</param>
+        /// <param name="pathClass">职业规划等级</param>
+        /// <param name="cursor">已经返回的数据条数</param>
+        /// <param name="count">前台需要的数据条数</param>
+        /// <returns></returns>
+        public RetJsonModel GetHistortModify(string userId, string pathId, int pathClass, int cursor, int count)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+                DateTime now = db.GetDate();
+                int timestamp = FunctionHelper.GetTimestamp();
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = timestamp;
+
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, pathId, FunctionHelper.GetDescByCode(pathClass));
+
+                List<ModifyPathModel> modifyList = GetModifyInfo(userId, pathId, pathClass, cursor, count, true, out bool hasMore);
+
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = new
+                {
+                    modify_list = modifyList,
+                    has_more = hasMore
+                };
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        /// <summary>
+        /// 查询修改详情页
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="modifyId">修改职业规划的ID</param>
+        /// <returns></returns>
+        public RetJsonModel GetModifyDetailedInfo(string userId,string modifyId)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = FunctionHelper.GetTimestamp();
+
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, modifyId, "MODIFY");
+
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = GetModifyById(userId, modifyId);
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+
+        /// <summary>
         /// 查询feed流信息(type=1时只返回first这一级的信息，type=2时返回first、second这两级的信息，type=3时返回first、second、third这三级的信息)
         /// </summary>
         /// <param name="db"></param>
@@ -134,7 +508,7 @@ namespace CommunityWebApi.Domains
         /// <param name="count">前台需要的数据条数</param>
         /// <param name="status">前台需要的数据状态（1：审核通过；2：待审核）</param>
         /// <returns></returns>
-        private List<FeedFirstReturnModel> GetFeedInfoByType(SqlSugarClient db,int cursor, int count,int status)
+        private List<FeedFirstReturnModel> GetFeedInfoByType(SqlSugarClient db, int cursor, int count, int status)
         {
             try
             {
@@ -180,15 +554,15 @@ namespace CommunityWebApi.Domains
 
 
                 List<FeedFirstReturnModel> list = new List<FeedFirstReturnModel>();
-                for(int i = 0;i < allData.Count; i++)
+                for (int i = 0; i < allData.Count; i++)
                 {
                     //如果type=1，只返回first这一级的信息
                     FeedFirstReturnModel firstModel = new FeedFirstReturnModel();
                     firstModel.Type = 1;
-                    firstModel.FIRST_ID = allData[i].ID;
+                    firstModel.ID = allData[i].ID;
                     firstModel.TIMESTAMP = allData[i].TIMESTAMP_INT;
                     firstModel.TITLE = allData[i].TITLE;
-                    firstModel.UserId = allData[i].USER_ID;
+                    firstModel.USER_ID = allData[i].USER_ID;
                     firstModel.UserInfo = new UserInfoReturnModel()
                     {
                         NiCK_NAME = allData[i].NICK_NAME
@@ -197,7 +571,7 @@ namespace CommunityWebApi.Domains
                     if (i >= typeCount && i < typeCount * 2)
                     {
                         firstModel.Type = 2;
-                        firstModel.SecondList = secondData.Where(x=>x.FIRST_ID== allData[i].ID).ToList();
+                        firstModel.SecondList = secondData.Where(x => x.FIRST_ID == allData[i].ID).ToList();
                     }
                     //如果type=3，返回first、second、third这三级的信息
                     if (i >= typeCount * 2)
@@ -206,7 +580,7 @@ namespace CommunityWebApi.Domains
                         firstModel.SecondList = secondData.Where(x => x.FIRST_ID == allData[i].ID).ToList();
 
                         //third三级信息
-                        foreach(var item in firstModel.SecondList)
+                        foreach (var item in firstModel.SecondList)
                         {
                             item.ThirdList = thirdData.Where(x => x.SECOND_ID == item.ID && x.FIRST_ID == item.FIRST_ID).ToList();
                         }
@@ -230,63 +604,107 @@ namespace CommunityWebApi.Domains
         /// <param name="status">前台需要的数据状态（1：审核通过；2：待审核）</param>
         /// <param name="firstIdList">职业路径一级ID集合</param>
         /// <returns></returns>
-        public List<FeedFirstReturnModel> GetFeedInfo(SqlSugarClient db, string userId,int cursor, int count,int status,List<string> firstIdList = null)
+        public List<FeedFirstReturnModel> GetFeedInfo(SqlSugarClient db, string userId, int cursor, int count, int status, List<string> firstIdList = null,string topicId = "",string faqId = "")
         {
             try
             {
                 //过滤查询出最新的count条数据
-                var firstData = db.Queryable<BUS_CAREERPATH_FIRST, SYS_USER_INFO>((a, b) => new object[]{
-                    JoinType.Left,a.USER_ID==b.USER_ID && a.STATE==b.STATE
+                var firstData = db.Queryable<BUS_CAREERPATH_FIRST, SYS_USER_INFO, BUS_USER_FAVOUR, MAP_USER_CARREERPATH>((a, b, c, d) => new object[]{
+                    JoinType.Left,a.USER_ID==b.USER_ID && a.STATE==b.STATE,
+                    JoinType.Left,a.ID==c.TYPE_ID && a.USER_ID==c.USER_ID && a.STATE==c.STATE && c.USER_ID==userId && c.TYPE==1,
+                    JoinType.Left,a.ID==d.CP_FIRST_ID&&a.STATE==d.STATE && d.USER_ID==userId
                 }).Where((a, b) => a.STATE == "A" && a.STATUS == status)
                 .WhereIF(firstIdList != null, (a, b) => firstIdList.Contains(a.ID))
+                .WhereIF(!string.IsNullOrEmpty(topicId), $"a.ID in (select p.FIRST_PATH_ID from MAP_PATH_TOPIC p where p.TOPIC_ID='{topicId}')")
+                .WhereIF(!string.IsNullOrEmpty(faqId), $"a.ID in (select t.FIRST_PATH_ID from MAP_PATH_FAQ t where t.FAQ_ID='{faqId}')")
                 .OrderBy((a, b) => a.DATETIME_CREATED, OrderByType.Asc)
-                .Select((a, b) => new FeedFirstReturnModel
+                .Select((a, b, c, d) => new FeedFirstReturnModel
                 {
-                    FIRST_ID = a.ID,
+                    ID = a.ID,
                     TIMESTAMP = a.TIMESTAMP_INT,
                     TITLE = a.TITLE,
-                    UserId = a.USER_ID,
-                    NICK_NAME = b.NICK_NAME
+                    USER_ID = a.USER_ID,
+                    NICK_NAME = b.NICK_NAME,
+                    FAVOUR_COUNT = a.FAVOUR_COUNT,
+                    IS_FAVOUR = c.ID != null && c.ID != "",
+                    IS_FOCUS = d.ID != null && d.ID != ""
                 }).Skip(cursor).Take(count).ToList();
-                List<string> firstId = firstData.Select(x => x.FIRST_ID).ToList();
+                List<string> firstId = firstData.Select(x => x.ID).ToList();
+
                 //查询出所有的二级信息
-                var secondData = db.Queryable<BUS_CAREERPATH_SECOND, SYS_USER_INFO>((a, b) => new object[]{
-                    JoinType.Left,a.USER_ID==b.USER_ID && a.STATE==b.STATE
+                var secondData = db.Queryable<BUS_CAREERPATH_SECOND, SYS_USER_INFO, BUS_USER_FAVOUR>((a, b, c) => new object[]{
+                    JoinType.Left,a.USER_ID==b.USER_ID && a.STATE==b.STATE,
+                    JoinType.Left,a.ID==c.TYPE_ID && a.USER_ID==c.USER_ID && a.STATE==b.STATE && c.USER_ID==userId && c.TYPE==1
                 }).Where((a, b) => a.STATE == "A" && firstId.Contains(a.FIRST_ID) && a.STATUS == status)
-                .Select((a, b) => new FeedSecondReturnModel
+                .Select((a, b, c) => new FeedSecondReturnModel
                 {
                     TIMESTAMP = a.TIMESTAMP_INT,
                     TITLE = a.TITLE,
                     ID = a.ID,
                     FIRST_ID = a.FIRST_ID,
-                    NICK_NAME = b.NICK_NAME
+                    NICK_NAME = b.NICK_NAME,
+                    USER_ID = a.USER_ID,
+                    FAVOUR_COUNT = a.FAVOUR_COUNT,
+                    IS_FAVOUR = c.ID == null && c.ID != ""
                 }).ToList();
                 List<string> secondId = secondData.Select(x => x.ID).ToList();
                 //查询出所有的三级信息
-                var thirdData = db.Queryable<BUS_CAREERPATH_THIRD, SYS_USER_INFO>((a, b) => new object[]{
-                    JoinType.Left,a.USER_ID==b.USER_ID && a.STATE==b.STATE
+                var thirdData = db.Queryable<BUS_CAREERPATH_THIRD, SYS_USER_INFO, BUS_USER_FAVOUR>((a, b, c) => new object[]{
+                    JoinType.Left,a.USER_ID==b.USER_ID && a.STATE==b.STATE,
+                    JoinType.Left,a.ID==c.TYPE_ID && a.USER_ID==c.USER_ID && a.STATE==b.STATE && c.USER_ID==userId && c.TYPE==1
                 }).Where((a, b) => a.STATE == "A" && secondId.Contains(a.SECOND_ID) && a.STATUS == status)
-                .Select((a, b) => new FeedThirdReturnModel
+                .Select((a, b, c) => new FeedThirdReturnModel
                 {
                     TIMESTAMP = a.TIMESTAMP_INT,
                     TITLE = a.TITLE,
                     FIRST_ID = a.FIRST_ID,
                     SECOND_ID = a.SECOND_ID,
                     ID = a.ID,
-                    NICK_NAME= b.NICK_NAME
+                    NICK_NAME = b.NICK_NAME,
+                    USER_ID = a.USER_ID,
+                    FAVOUR_COUNT = a.FAVOUR_COUNT,
+                    IS_FAVOUR = c.ID == null && c.ID != ""
                 }).ToList();
-                //查询当前用户在查到的feed中是否有已关注的
-                List<string> userFocus = db.Queryable<MAP_USER_CARREERPATH>()
-                    .Where(x => x.USER_ID == userId && firstId.Contains(x.CP_FIRST_ID) && x.STATE == "A")
-                    .Select(x => x.CP_FIRST_ID).ToList();
 
                 List<FeedFirstReturnModel> list = new List<FeedFirstReturnModel>();
                 foreach (var item in firstData)
                 {
                     item.Type = 3;
-                    item.IS_FOCUS = userFocus.Where(x => x == item.FIRST_ID).Count() == 1 ? true : false;
-                    item.SecondList = secondData.Where(x => x.FIRST_ID == item.FIRST_ID).ToList();
-                    foreach(var it in item.SecondList)
+                    item.SecondList = secondData.Where(x => x.FIRST_ID == item.ID).ToList();
+                    //查询当前职业规划所绑定的话题集合
+                    item.TopicList = db.Queryable<MAP_PATH_TOPIC, BUS_TOPICS>((a, b) => new object[]
+                    {
+                        JoinType.Inner,a.TOPIC_ID==b.ID&&a.STATE==b.STATE
+                    }).Where((a, b) => a.FIRST_PATH_ID == item.ID && a.STATE == "A" && b.STATUS == 1)
+                    .Select((a, b) => new TopicsRetornModel
+                    {
+                        ID = b.ID,
+                        TOPIC_NAME = b.TOPIC_NAME
+                    }).ToList();
+                    //查询当前职业规划所绑定的问题集合
+                    item.FaqList = db.Queryable<MAP_PATH_FAQ, BUS_FAQS>((a, b) => new object[]
+                    {
+                        JoinType.Inner,a.FAQ_ID==b.ID&&a.STATE==b.STATE
+                    }).Where((a, b) => a.FIRST_PATH_ID == item.ID && a.STATE == "A")
+                    .Select((a, b) => new FaqsRetornModel
+                    {
+                        FAQ_ID = b.ID,
+                        FAQ_DESC = b.QUESTION_DESC
+                    }).ToList();
+                    //查询分享人
+                    item.ShareList = db.Queryable<BUS_USER_SHARE, SYS_USER_INFO>((a, b) => new object[]
+                    {
+                        JoinType.Inner,a.USER_ID==b.USER_ID&&a.STATE==b.STATE
+                    }).Where((a, b) => a.STATE == "A" && a.CONTENT_ID == item.ID)
+                    .Select((a, b) => new ShareRetornModel
+                    {
+                        USER_ID = b.USER_ID,
+                        NICK_NAME = b.NICK_NAME
+                    }).ToList();
+
+                    item.PlanList = GetPlan(db, item.ID);
+
+                    foreach (var it in item.SecondList)
                     {
                         it.ThirdList = thirdData.Where(x => x.SECOND_ID == it.ID && x.FIRST_ID == it.FIRST_ID).ToList();
                     }
@@ -302,53 +720,353 @@ namespace CommunityWebApi.Domains
         }
 
         /// <summary>
-        /// 审核接口
+        /// 根据职业路径ID查询评论信息
         /// </summary>
-        /// <param name="firstId">父级ID集合</param>
-        /// <param name="isPass">是否通过（0:未通过；1:通过）</param>
+        /// <param name="pathId">用户ID</param>
+        /// <param name="pathIdList">职业路径ID</param>
+        /// <param name="orderbyType">排序方式(1：时间；2：点赞量)</param>
+        /// <param name="pathType">评论的职业规划类型</param>
+        /// <param name="isReply">是否查询二级评论</param>
         /// <returns></returns>
-        public RetJsonModel AuditPath(List<string> firstId,int isPass,string userId)
+        public List<CommentReturnModel> GetCommentByPath(string userId,string pathId,int orderbyType, int pathType, bool isReply, int cursor, int count,out bool hasMore)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+                hasMore = false;
+                //当前职业规划下所有的一级评论的数量
+                int commentCount = db.Queryable<BUS_CAREERPATH_COMMENT>()
+                    .Where(x => x.PATH_ID == pathId && x.STATE == "A")
+                    .Count();
+                if (commentCount == 0) return null;
+
+                List<CommentReturnModel> CommentData = db.Queryable<BUS_CAREERPATH_COMMENT, SYS_USER_INFO, BUS_USER_FAVOUR>((a, b, c) => new object[]{
+                    JoinType.Left,a.FROM_UID==b.USER_ID && a.STATE==b.STATE,
+                    JoinType.Left,a.ID==c.TYPE_ID && a.STATE==c.STATE && c.USER_ID==userId
+                }).Where((a, b, c) => a.PATH_ID == pathId && a.PATH_TYPE == pathType && a.STATE == "A")
+                .OrderByIF(orderbyType == 1, (a, b) => a.DATETIME_CREATED, OrderByType.Desc)
+                .OrderByIF(orderbyType == 2, (a, b) => a.FAVOUR_COUNT, OrderByType.Desc)
+                .Select((a, b, c) => new CommentReturnModel
+                {
+                    ID = a.ID,
+                    CONTENT = a.CONTENT,
+                    PUBLISH_TIME = a.TIMESTAMP_INT,
+                    PATH_ID = a.PATH_ID,
+                    FROM_UID = a.FROM_UID,
+                    NICK_NAME = b.NICK_NAME,
+                    FAVOUR_COUNT = a.FAVOUR_COUNT,
+                    IS_FAVOUR = c.ID != null && c.ID != ""
+                }).Skip(cursor).Take(count).ToList();
+                //判断是否要查询二级评论
+                if (isReply == true)
+                {
+                    foreach (var item in CommentData)
+                    {
+                        //判断一级评论下有几个二级评论
+                        int replyCount = db.Queryable<BUS_COMMENT_REPLY>()
+                                    .Where(x => x.COMMENT_ID == item.ID && x.STATE == "A")
+                                    .Count();
+                        if (replyCount == 0) continue;
+                        List<ReplyReturnModel> ReplyData = db.Queryable<BUS_COMMENT_REPLY, SYS_USER_INFO, SYS_USER_INFO, BUS_USER_FAVOUR>((a, b, c, d) => new object[]
+                        {
+                            JoinType.Left,a.FROM_UID==b.USER_ID && a.STATE==b.STATE,
+                            JoinType.Left,a.TO_UID==c.USER_ID && a.STATE==c.STATE,
+                            JoinType.Left,a.ID==d.TYPE_ID&&a.STATE==d.STATE&&d.USER_ID==userId
+                        }).Where((a, b, c) => a.COMMENT_ID == item.ID && a.STATE == "A")
+                        .OrderByIF(orderbyType == 1, (a, b) => a.DATETIME_CREATED, OrderByType.Desc)
+                        .OrderByIF(orderbyType == 2, (a, b) => a.FAVOUR_COUNT, OrderByType.Desc)
+                        .Select((a, b, c, d) => new ReplyReturnModel
+                        {
+                            ID = a.ID,
+                            CONTENT = a.CONTENT,
+                            PUBLISH_TIME = a.TIMESTAMP_INT,
+                            COMMENT_ID = a.COMMENT_ID,
+                            REPLY_ID = a.REPLY_ID,
+                            FROM_USER_ID = a.FROM_UID,
+                            TO_USER_ID = a.TO_UID,
+                            FROM_NICK_NAME = b.NICK_NAME,
+                            TO_NICK_NAME = c.NICK_NAME,
+                            FAVOUR_COUNT = a.FAVOUR_COUNT,
+                            IS_FAVOUR = d.ID != null && d.ID != ""
+                        }).Take(1).ToList();
+                        //判断是否还有更多
+                        bool replyHasMore = replyCount > 1 ? true : false;
+                        item.ReplyInfo = new
+                        {
+                            reply_list = ReplyData,
+                            has_more = replyHasMore
+                        };
+                    }
+                }
+                hasMore = commentCount > cursor + count ? true : false;
+
+                return CommentData;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 根据职业规划ID查询提出修改的内容
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="pathIdList">职业路径ID</param>
+        /// <param name="cursor">已经返回的数据条数</param>
+        /// <param name="count">前台需要的数据条数</param>
+        /// <param name="isHistory">是否是查询历史修改</param>
+        /// <param name="outParam">是否还有未查询到的</param>
+        /// <returns></returns>
+        public List<ModifyPathModel> GetModifyInfo(string userId, string pathId,int pathClass,int cursor, int count, bool isHistory, out bool outParam)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+
+                //根据pathId找到父级id，查询出第一个版本的id
+                string oldPathId = "";
+                if (pathClass == 2)
+                {
+                    oldPathId = db.Queryable<BUS_CAREERPATH_SECOND, BUS_CAREERPATH_SECOND>((a, b) => new object[]{
+                            JoinType.Inner,a.FIRST_ID==b.FIRST_ID
+                        }).Where((a, b) => a.ID == pathId && a.STATE == "A" && b.VERSION_NO == 1)
+                    .Select((a, b) => b.ID).First();
+                }
+                if (pathClass == 3)
+                {
+                    oldPathId = db.Queryable<BUS_CAREERPATH_THIRD, BUS_CAREERPATH_THIRD>((a, b) => new object[]{
+                            JoinType.Inner,a.SECOND_ID==b.SECOND_ID
+                        }).Where((a, b) => a.ID == pathId && a.STATE == "A" && b.VERSION_NO == 1)
+                    .Select((a, b) => b.ID).First();
+                }
+
+                //根据职业规划ID查询正在讨论中的修改
+                var modifyData = db.Queryable<BUS_MODIFY_PATH, SYS_USER_INFO>((a, b) => new object[]{
+                    JoinType.Left,a.USER_ID==b.USER_ID && b.STATE=="A"
+                }).Where((a, b) => a.PATH_ID == oldPathId)
+                .WhereIF(isHistory == false, (a, b) => a.IS_MERGE == "N" && a.STATE == "A")
+                .WhereIF(isHistory == true, (a, b) => (a.IS_MERGE == "Y" || a.STATE == "D"))
+                .OrderBy((a, b) => a.DATETIME_CREATED, OrderByType.Desc)
+                .Select((a, b) => new ModifyPathModel
+                {
+                    ID = a.ID,
+                    PATH_ID = a.PATH_ID,
+                    PATH_CLASS = a.PATH_CLASS,
+                    CONTENT = a.CONTENT,
+                    USER_ID = a.USER_ID,
+                    NICK_NAME = b.NICK_NAME
+                }).Skip(cursor).Take(count).ToList();
+
+                foreach (var item in modifyData)
+                {
+                    //根据PATH_ID查询评论信息
+                    item.CommentInfo = new
+                    {
+                        comment_list = GetCommentByPath(userId, item.ID, 2, 6, false, 0, 1, out bool hasMore),
+                        has_more = hasMore
+                    };
+                }
+
+                //判断是否还有未查询出的记录
+                int historyCount = db.Queryable<BUS_MODIFY_PATH>()
+                        .Where(x => x.PATH_ID == oldPathId && (x.IS_MERGE == "Y" || x.STATE == "D"))
+                        .Count();
+                //查询历史过期信息
+                if (isHistory == true)
+                {
+                    outParam = false;
+                    if (historyCount > cursor + count)
+                    {
+                        outParam = true;
+                    }
+                }
+                else //查询详情页的正在修改信息
+                {
+                    //判断是否有历史修改记录
+                    outParam = historyCount > 0 ? true : false;
+                }
+
+                return modifyData;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+        /// <summary>
+        /// 根据修改职业规划表的ID查询详细信息
+        /// </summary>
+        /// <param name="modifyId"></param>
+        /// <returns></returns>
+        public ModifyPathModel GetModifyById(string userId, string modifyId)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+                ModifyPathModel modifyData = db.Queryable<BUS_MODIFY_PATH, SYS_USER_INFO, BUS_MODIFIED_VOTE>((a, b, c) => new object[]
+                  {
+                    JoinType.Left,a.USER_ID==b.USER_ID&&a.STATE==b.STATE,
+                    JoinType.Left,a.ID==c.MODIFY_PATH_ID&&a.STATE==b.STATE&&c.USER_ID==userId
+                  }).Where((a, b) => a.ID == modifyId && a.STATE == "A")
+                .Select((a, b, c) => new ModifyPathModel
+                {
+                    ID = a.ID,
+                    PATH_ID = a.PATH_ID,
+                    PATH_CLASS = a.PATH_CLASS,
+                    CONTENT = a.CONTENT,
+                    SUPPORT = a.SUPPORT,
+                    OPPOSE = a.OPPOSE,
+                    USER_ID = a.USER_ID,
+                    NICK_NAME = b.NICK_NAME,
+                    IS_VOTE = c.ID != null && c.ID != ""
+                }).First();
+                //根据职业规划等级判断查询原职业规划内容
+                if (modifyData.PATH_CLASS == 2)
+                {
+                    string oldTitle = db.Queryable<BUS_CAREERPATH_SECOND>()
+                            .Where(x => x.ID == modifyData.PATH_ID && x.STATE == "A")
+                            .Select(x => x.TITLE).First();
+                    modifyData.OLD_PATH = oldTitle;
+                }
+                if (modifyData.PATH_CLASS == 3)
+                {
+                    string oldTitle = db.Queryable<BUS_CAREERPATH_THIRD>()
+                            .Where(x => x.ID == modifyData.PATH_ID && x.STATE == "A")
+                            .Select(x => x.TITLE).First();
+                    modifyData.OLD_PATH = oldTitle;
+                }
+                List<ReviewerVote> reviewer = db.Queryable<BUS_PATH_REVIEWER, SYS_USER_INFO>((a, b) => new object[]{
+                    JoinType.Left,a.USER_ID==b.USER_ID&&a.STATE==b.STATE
+                }).Where((a, b) => a.MODIFY_PATH_ID == modifyId && a.STATE == "A")
+                .Select((a, b) => new ReviewerVote
+                {
+                    IS_AGREE = a.IS_AGREE,
+                    USER_ID = a.USER_ID,
+                    NICK_NAME = b.NICK_NAME
+                }).ToList();
+                modifyData.CommentInfo = new
+                {
+                    comment_list = GetCommentByPath(userId, modifyId, 1, 4, false, 0, 5, out bool hasMore),
+                    has_more = hasMore
+                };
+                modifyData.ReviewerList = reviewer;
+
+                return modifyData;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 获取话题
+        /// </summary>
+        /// <param name="cursor"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
+        public RetJsonModel GetTopics(int cursor, int count,bool isNeedPath)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+
+                var data = db.Queryable<BUS_TOPICS>()
+                    .Where(x => x.STATE == "A" && x.STATUS == 1)
+                    .Select(x => new TopicsRetornModel
+                    {
+                        ID = x.ID,
+                        TOPIC_NAME = x.TOPIC_NAME
+                    }).Skip(cursor).Take(count).ToList();
+                //判断是否还有未查询到的话题
+                bool hasMore = false;
+                int allCount = db.Queryable<BUS_TOPICS>().Where(x => x.STATE == "A" && x.STATUS == 1).Count();
+                if (cursor + count < allCount)
+                {
+                    hasMore = true;
+                }
+
+                if (isNeedPath)
+                {
+                    foreach(var item in data)
+                    {
+                        item.PATH_LIST = GetTopicPathDtl(db, item.ID, 0, 1);
+                    }
+                }
+
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = FunctionHelper.GetTimestamp();
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = new
+                {
+                    topic_list = data,
+                    has_more = hasMore
+                };
+
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 在问答区发起的提问
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="desc">提问描述</param>
+        /// <param name="topicName">话题名称</param>
+        /// <returns></returns>
+        public RetJsonModel PublishQues(string userId,string desc,string topicName)
         {
             var db = DBContext.GetInstance;
             try
             {
                 DateTime now = db.GetDate();
-                RetJsonModel jsonModel = new RetJsonModel();
-                jsonModel.time = FunctionHelper.GetTimestamp();
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                int timestamp = FunctionHelper.GetTimestamp();
 
-                //验证当前用户是否有审核的权限
-                var isCheck = db.Queryable<SYS_USER_PERMISSION>()
-                    .Where(x => x.USER_ID == userId && x.STATE == "A" && x.PERMISSION_CODE == "CHECK")
+                var count = db.Queryable<BUS_TOPICS>()
+                    .Where(x => x.STATE == "A" && x.TOPIC_NAME == topicName)
                     .Count();
-                if (isCheck == 0)
+                if (count > 0)
                 {
-                    jsonModel.status = 0;
-                    jsonModel.msg = "您没有审核权限";
-                    return jsonModel;
+                    throw new Exception("该话题已存在");
                 }
 
                 db.Ado.BeginTran();
-                db.Updateable<BUS_CAREERPATH_FIRST>().SetColumns(x => new BUS_CAREERPATH_FIRST()
-                {
-                    STATUS = isPass,
-                    DATETIME_MODIFIED = now
-                }).ReSetValue(x => x.STATUS == isPass && x.DATETIME_MODIFIED == now).Where(x => firstId.Contains(x.ID)).ExecuteCommand();
+                //插入问答表
+                BUS_FAQS faqModel = new BUS_FAQS();
+                faqModel.ID = Guid.NewGuid().ToString();
+                faqModel.DATETIME_CREATED = now;
+                faqModel.STATE = "A";
+                faqModel.TIMESTAMP_INT = timestamp;
+                faqModel.QUESTION_DESC = desc;
+                faqModel.TOPIC_NAME = topicName;
+                faqModel.USER_ID = userId;
+                db.Insertable(faqModel).ExecuteCommand();
 
-                db.Updateable<BUS_CAREERPATH_SECOND>().SetColumns(x => new BUS_CAREERPATH_SECOND()
-                {
-                    STATUS = isPass,
-                    DATETIME_MODIFIED = now
-                }).Where(x => firstId.Contains(x.FIRST_ID)).ExecuteCommand();
+                //插入话题表，状态为2(还未成为正式话题)
+                BUS_TOPICS topicModel = new BUS_TOPICS();
+                topicModel.ID = Guid.NewGuid().ToString();
+                topicModel.DATETIME_CREATED = now;
+                topicModel.STATE = "A";
+                topicModel.TIMESTAMP_INT = timestamp;
+                topicModel.TOPIC_NAME = desc;
+                topicModel.STATUS = 2;
+                db.Insertable(topicModel).ExecuteCommand();
 
-                db.Updateable<BUS_CAREERPATH_THIRD>().SetColumns(x => new BUS_CAREERPATH_THIRD()
-                {
-                    STATUS = isPass,
-                    DATETIME_MODIFIED = now
-                }).Where(x => firstId.Contains(x.FIRST_ID)).ExecuteCommand();
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = timestamp;
+                jsonModel.status = 1;
+                jsonModel.msg = "提交成功";
+
                 db.Ado.CommitTran();
 
-                jsonModel.status = 1;
-                jsonModel.msg = "成功";
                 return jsonModel;
             }
             catch (Exception ex)
@@ -359,47 +1077,109 @@ namespace CommunityWebApi.Domains
         }
 
         /// <summary>
-        /// 查询职业路径详情页
+        /// 获取话题下的明细
         /// </summary>
-        /// <param name="userId">用户ID</param>
-        /// <param name="pathId">职业路径ID</param>
+        /// <param name="db"></param>
+        /// <param name="topicId">话题ID</param>
+        /// <param name="cursor"></param>
+        /// <param name="count"></param>
         /// <returns></returns>
-        public RetJsonModel GetPathDetailedInfo(string userId, string pathId)
+        public FeedFirstReturnModel GetTopicPathDtl(SqlSugarClient db,string topicId, int cursor, int count)
         {
-            var db = DBContext.GetInstance;
             try
             {
-                DateTime now = db.GetDate();
-                RetJsonModel jsonModel = new RetJsonModel();
-                jsonModel.time = FunctionHelper.GetTimestamp();
-
-                #region 数据验证
-                Tuple<bool, string> verify = FunctionHelper.Verify("", "", pathId);
-                if (verify.Item1 == false)
+                var firstdata = db.Queryable<MAP_PATH_TOPIC, BUS_CAREERPATH_FIRST, SYS_USER_INFO>((x, y, z) => new object[]{
+                    JoinType.Inner,x.FIRST_PATH_ID==y.ID&&x.STATE==y.STATE,
+                    JoinType.Left,y.USER_ID==z.USER_ID && y.STATE==z.STATE
+                }).Where((x, y, z) => x.TOPIC_ID == topicId && x.STATE == "A" && y.STATUS == 1)
+                .OrderBy((x, y, z) => y.FAVOUR_COUNT, OrderByType.Desc)
+                .Select((x, y, z) => new FeedFirstReturnModel()
                 {
-                    jsonModel.status = 0;
-                    jsonModel.msg = verify.Item2;
-                    return jsonModel;
+                    ID = y.ID,
+                    TITLE = y.TITLE,
+                    TIMESTAMP = y.TIMESTAMP_INT,
+                    FAVOUR_COUNT = y.FAVOUR_COUNT,
+                    USER_ID = y.USER_ID,
+                    NICK_NAME = z.NICK_NAME
+                }).First();
+                if (firstdata == null)
+                {
+                    return null;
                 }
-                #endregion
 
-                //当前是只有查询所有三级信息的需求
-                List<string> firstIdList = new List<string>();
-                firstIdList.Add(pathId);
-                FeedFirstReturnModel pathInfo = GetFeedInfo(db, userId, 0, 1, 1, firstIdList).FirstOrDefault();
-                pathInfo.CommentList = GetCommentByPath(pathInfo.FIRST_ID);
-                foreach(var item in pathInfo.SecondList)
+                var seconddata = db.Queryable<BUS_CAREERPATH_SECOND, SYS_USER_INFO>((x, y) => new object[]{
+                    JoinType.Left,x.USER_ID==y.USER_ID&&x.STATE==y.STATE
+                }).Where((x, y) => x.FIRST_ID == firstdata.ID && x.STATE == "A" && x.STATUS == 1)
+                .Select((x, y) => new FeedSecondReturnModel()
                 {
-                    item.CommentList= GetCommentByPath(item.ID);
-                    foreach(var it in item.ThirdList)
+                    TITLE = x.TITLE,
+                    ID = x.ID,
+                    TIMESTAMP = x.TIMESTAMP_INT,
+                    FAVOUR_COUNT = x.FAVOUR_COUNT,
+                    USER_ID = x.USER_ID,
+                    NICK_NAME = y.NICK_NAME
+                }).ToList();
+
+                firstdata.SecondList = seconddata;
+
+                foreach (var item in seconddata)
+                {
+                    var thirddata = db.Queryable<BUS_CAREERPATH_THIRD, SYS_USER_INFO>((x, y) => new object[]{
+                        JoinType.Left,x.USER_ID==y.USER_ID&&x.STATE==y.STATE
+                    }).Where((x, y) => x.FIRST_ID == firstdata.ID && x.SECOND_ID == item.ID && x.STATE == "A" && x.STATUS == 1)
+                    .Select((x, y) => new FeedThirdReturnModel()
                     {
-                        it.CommentList = GetCommentByPath(it.ID);
-                    }
+                        TITLE = x.TITLE,
+                        ID = x.ID,
+                        TIMESTAMP = x.TIMESTAMP_INT,
+                        FAVOUR_COUNT = x.FAVOUR_COUNT,
+                        USER_ID = x.USER_ID,
+                        NICK_NAME = y.NICK_NAME
+                    }).ToList();
+
+                    item.ThirdList = thirddata;
                 }
 
+                return firstdata;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 根据话题ID查询某个话题的详情
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="topicId">话题ID</param>
+        /// <returns></returns>
+        public RetJsonModel GetTopicDtlById(string userId,string topicId)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, topicId, "TOPIC");
+
+                int timestamp = FunctionHelper.GetTimestamp();
+                var data = db.Queryable<BUS_TOPICS>()
+                    .Where(x => x.ID == topicId && x.STATUS == 1 && x.STATE == "A")
+                    .Select(x => new TopicsRetornModel
+                    {
+                        ID = x.ID,
+                        TOPIC_NAME = x.TOPIC_NAME
+                    }).First();
+
+                RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.status = 1;
                 jsonModel.msg = "成功";
-                jsonModel.data = pathInfo;
+                jsonModel.data = new
+                {
+                    topic_info = data
+                };
+
                 return jsonModel;
             }
             catch (Exception ex)
@@ -408,88 +1188,193 @@ namespace CommunityWebApi.Domains
             }
         }
 
-        public object GetPathDetailedByID(int type,string pathId)
+        /// <summary>
+        /// 用户分享
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="contentId">分享内容ID</param>
+        /// <param name="toSharedId">分享到哪里</param>
+        /// <param name="shareType">分享类型(1：职业规划分享到问答区)</param>
+        /// <returns></returns>
+        public RetJsonModel ShareContent(string userId, string contentId, string toSharedId,int shareType)
+        {
+            var db = DBContext.GetInstance;
+            try
+            {
+                DateTime now = db.GetDate();
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                if (shareType == 1)
+                {
+                    FunctionHelper.VerifyInfo(db, contentId, "FIRST_PATH");
+                    FunctionHelper.VerifyInfo(db, toSharedId, "FAQ");
+                }
+
+                int timestamp = FunctionHelper.GetTimestamp();
+
+                db.Ado.BeginTran();
+                //插入用户分享表
+                BUS_USER_SHARE us = new BUS_USER_SHARE();
+                us.ID = Guid.NewGuid().ToString();
+                us.DATETIME_CREATED = now;
+                us.STATE = "A";
+                us.TIMESTAMP_INT = timestamp;
+                us.USER_ID = userId;
+                us.CONTENT_ID = contentId;
+                us.TO_SHARED_ID = toSharedId;
+                us.SHARE_TYPE = shareType;
+                db.Insertable(us).ExecuteCommand();
+
+                if (shareType == 1)
+                {
+                    //插入职业规划和问答映射表
+                    MAP_PATH_FAQ pf = new MAP_PATH_FAQ();
+                    pf.ID = Guid.NewGuid().ToString();
+                    pf.DATETIME_CREATED = now;
+                    pf.STATE = "A";
+                    pf.FIRST_PATH_ID = contentId;
+                    pf.FAQ_ID = toSharedId;
+                    db.Insertable(pf).ExecuteCommand();
+                }
+
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = timestamp;
+                jsonModel.status = 1;
+                jsonModel.msg = "分享成功";
+
+                db.Ado.CommitTran();
+
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                db.Ado.RollbackTran();
+                throw ex;
+            }
+        }
+
+        public FeedFirstReturnModel GetFaqs(SqlSugarClient db)
         {
             try
             {
-                var db = DBContext.GetInstance;
-                if (type == 1)
+                var data = db.Queryable<BUS_FAQS, SYS_USER_INFO>((a, b) => new object[]
+                   {
+                    JoinType.Left,a.USER_ID==b.USER_ID&&a.STATE==b.STATE
+                   }).Where((a, b) => a.STATE == "A")
+                .OrderBy((a, b) => a.DATETIME_CREATED, OrderByType.Asc)
+                .Select((a, b) => new FeedFirstReturnModel
                 {
-                    var data = db.Queryable<BUS_CAREERPATH_FIRST, SYS_USER_INFO>((a, b) => new object[]
-                       {
-                            JoinType.Left,a.USER_ID==b.USER_ID&&a.STATE==b.STATE
-                       }).Where((a, b) => a.ID == pathId && a.STATE == "A")
-                    .Select((a, b) => new FeedFirstReturnModel
-                    {
-                        FIRST_ID = a.ID,
-                        Type = 1,
-                        TITLE = a.TITLE,
-                        UserId = a.USER_ID,
-                        TIMESTAMP = a.TIMESTAMP_INT,
-                        UserInfo = new UserInfoReturnModel
-                        {
-                            NiCK_NAME = b.NICK_NAME
-                        }
-                    }).ToList();
-                }
-                return null;
-            }
-            catch (Exception)
-            {
+                    ID = a.ID,
+                    TIMESTAMP = a.TIMESTAMP_INT,
+                    TITLE = a.QUESTION_DESC,
+                    USER_ID = a.USER_ID,
+                    NICK_NAME = b.NICK_NAME,
+                    Type = 4
+                }).First();
 
-                throw;
+                return data;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
         }
 
         /// <summary>
-        /// 根据职业路径ID查询评论信息
+        /// 根据问答ID查询某个话题的详情
         /// </summary>
-        /// <param name="pathId">职业路径ID</param>
+        /// <param name="userId">用户ID</param>
+        /// <param name="topicId">话题ID</param>
         /// <returns></returns>
-        public List<CommentReturnModel> GetCommentByPath(string pathId)
+        public RetJsonModel GetFaqDtlById(string userId, string faqId)
         {
             try
             {
                 var db = DBContext.GetInstance;
-                List<CommentReturnModel> CommentData = db.Queryable<BUS_CAREERPATH_COMMENT, SYS_USER_INFO>((a, b) => new object[]{
-                    JoinType.Left,a.FROM_UID==b.USER_ID&&a.STATE==b.STATE
-                }).Where((a, b) => a.PATH_ID == pathId && a.STATE == "A")
-                .OrderBy((a, b) => a.DATETIME_CREATED, OrderByType.Desc)
-                .Select((a, b) => new CommentReturnModel
-                {
-                    ID = a.ID,
-                    CONTENT = a.CONTENT,
-                    PUBLISH_TIME = a.TIMESTAMP_INT,
-                    PATH_ID = a.PATH_ID,
-                    FROM_UID = a.FROM_UID,
-                    PATH_CLASS = a.PATH_CLASS,
-                    NICK_NAME = b.NICK_NAME
-                }).ToList();
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, faqId, "FAQ");
 
-                List<ReplyReturnModel> ReplyData = db.Queryable<BUS_COMMENT_REPLY, SYS_USER_INFO, SYS_USER_INFO>((a, b, c) => new object[]
-                  {
-                    JoinType.Left,a.FROM_UID==b.USER_ID && a.STATE==b.STATE,
-                    JoinType.Left,a.TO_UID==c.USER_ID && a.STATE==c.STATE
-                  }).Where((a, b, c) => a.COMMENT_ID == pathId && a.STATE == "A")
-                .OrderBy((a, b) => a.DATETIME_CREATED, OrderByType.Desc)
-                .Select((a, b, c) => new ReplyReturnModel
+                int timestamp = FunctionHelper.GetTimestamp();
+                var data = db.Queryable<BUS_FAQS, SYS_USER_INFO>((a, b) => new object[]{
+                    JoinType.Inner,a.USER_ID==b.USER_ID&&a.STATE==b.STATE
+                }).Where((a, b) => a.ID == faqId && a.STATE == "A")
+                .Select((a, b) => new
                 {
-                    ID = a.ID,
-                    CONTENT = a.CONTENT,
-                    PUBLISH_TIME = a.TIMESTAMP_INT,
-                    COMMENT_ID = a.COMMENT_ID,
-                    REPLY_ID = a.REPLY_ID,
-                    FROM_UID = a.FROM_UID,
-                    REPLY_TYPE = a.REPLY_TYPE,
-                    FROM_NICK_NAME = b.NICK_NAME,
-                    TO_NICK_NAME = c.NICK_NAME
+                    a.ID,
+                    a.QUESTION_DESC,
+                    a.USER_ID,
+                    b.NICK_NAME
+                }).First();
+                FaqsRetornModel faq = new FaqsRetornModel
+                {
+                    FAQ_ID = data.ID,
+                    FAQ_DESC = data.QUESTION_DESC
+                };
+                UserInfoReturnModel user = new UserInfoReturnModel
+                {
+                    USER_ID = data.USER_ID,
+                    NiCK_NAME = data.NICK_NAME
+                };
+
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = new
+                {
+                    faq_info = faq,
+                    user_info = user
+                };
+
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public List<PlanHeaderReturnModel> GetPlan(SqlSugarClient db,string pathId)
+        {
+            try
+            {
+                var data = db.Queryable<BUS_PLAN_HEADER, SYS_USER_INFO, SYS_USER_INFO>((a, b, c) => new object[]{
+                    JoinType.Left,a.USER_ID==b.USER_ID&&a.STATE==b.STATE,
+                    JoinType.Left,a.SOURCE_USER_ID==c.USER_ID&&a.STATE==c.STATE
+                }).Where((a, b, c) => a.FIRST_PATH_ID == pathId && a.STATE == "A")
+                .OrderBy((a, b, c) => a.FAVOUR_COUNT, OrderByType.Desc)
+                .Select((a, b, c) => new PlanHeaderReturnModel
+                {
+                    PLAN_ID = a.ID,
+                    TIMESTAMP = a.TIMESTAMP_INT,
+                    IS_FAVOUR = false,
+                    SOURCE_TYPE = a.SOURCE_TYPE,
+                    IS_SHARED = a.IS_SHARED,
+                    SHARED_COUNT = a.SHARED_COUNT,
+                    SHARE_VERSION = a.SHARE_VERSION,
+                    USER_ID = a.USER_ID,
+                    NICK_NAME = b.NICK_NAME,
+                    SOURCE_USER_ID = a.SOURCE_USER_ID,
+                    SOURCE_NICK_NAME = c.NICK_NAME
                 }).ToList();
-                foreach(var item in CommentData)
+                foreach(var item in data)
                 {
-                    item.ReplyList = ReplyData.Where(x => x.COMMENT_ID == item.ID).ToList();
+                    var dtl = db.Queryable<BUS_PLAN_DETAIL>()
+                        .Where(x => x.HEADER_ID == item.PLAN_ID && x.STATE == "A" && x.VISIBLE_TYPE == 1)
+                        .OrderBy(x => x.SEQ, OrderByType.Asc)
+                        .Select(x => new PlanDetailReturnModel
+                        {
+                            ID = x.ID,
+                            TIMESTAMP = x.TIMESTAMP_INT,
+                            CONTENT = x.CONTENT,
+                            STATUS = x.STATUS,
+                            COMPLETE_TIME = x.COMPLETE_TIME,
+                            VISIBLE_TYPE = x.VISIBLE_TYPE
+                        }).ToList();
+                    item.PLAN_DTL = dtl;
                 }
 
-                return CommentData;
+                return data;
             }
             catch (Exception ex)
             {

@@ -207,15 +207,20 @@
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="Common\DBHelper.cs" />
     <Compile Include="Common\FunctionHelper.cs" />
-    <Compile Include="Common\IInterceptorInerface.cs" />
     <Compile Include="Common\LogHelper.cs" />
+    <Compile Include="Common\VerifyHelper.cs" />
+    <Compile Include="Common\VerifyInterface.cs" />
+    <Compile Include="Controllers\BackManageController.cs" />
     <Compile Include="Controllers\FeedController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
+    <Compile Include="Controllers\PlanController.cs" />
     <Compile Include="Controllers\UserController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
+    <Compile Include="Domains\BackManageDomain.cs" />
     <Compile Include="Domains\FeedDomain.cs" />
     <Compile Include="Domains\LoginDomain.cs" />
+    <Compile Include="Domains\PlanDomain.cs" />
     <Compile Include="Domains\UserDomain.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -225,13 +230,25 @@
     <Compile Include="Models\BUS_CAREERPATH_SECOND.cs" />
     <Compile Include="Models\BUS_CAREERPATH_THIRD.cs" />
     <Compile Include="Models\BUS_COMMENT_REPLY.cs" />
+    <Compile Include="Models\BUS_FAQS.cs" />
+    <Compile Include="Models\BUS_MODIFIED_VOTE.cs" />
+    <Compile Include="Models\BUS_MODIFY_PATH.cs" />
+    <Compile Include="Models\BUS_PATH_REVIEWER.cs" />
+    <Compile Include="Models\BUS_PLAN_DETAIL.cs" />
+    <Compile Include="Models\BUS_PLAN_HEADER.cs" />
+    <Compile Include="Models\BUS_TOPICS.cs" />
     <Compile Include="Models\BUS_USER_FAVOUR.cs" />
+    <Compile Include="Models\BUS_USER_SHARE.cs" />
+    <Compile Include="Models\MAP_PATH_FAQ.cs" />
+    <Compile Include="Models\MAP_PATH_TOPIC.cs" />
     <Compile Include="Models\MAP_USER_CARREERPATH.cs" />
     <Compile Include="Models\ReceiveModel\FeedPathModel.cs" />
+    <Compile Include="Models\ReceiveModel\PlanReceiveModel.cs" />
     <Compile Include="Models\ReturnModels\CommentReturnModel.cs" />
     <Compile Include="Models\ReturnModels\RetJsonModel.cs" />
     <Compile Include="Models\ReturnModels\FeedReturnModel.cs" />
     <Compile Include="Models\ReturnModels\LoginReturnModel.cs" />
+    <Compile Include="Models\ReturnModels\TopicsRetornModel.cs" />
     <Compile Include="Models\SYS_FAIL_LOG.cs" />
     <Compile Include="Models\SYS_USER_INFO.cs" />
     <Compile Include="Models\SYS_USER_PERMISSION.cs" />
@@ -275,7 +292,9 @@
     <Content Include="Scripts\jquery-3.3.1.slim.js" />
     <Content Include="Scripts\jquery-3.3.1.slim.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
-    <Content Include="Web.config" />
+    <Content Include="Web.config">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </Content>

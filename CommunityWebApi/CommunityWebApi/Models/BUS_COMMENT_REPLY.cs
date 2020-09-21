@@ -56,12 +56,6 @@ namespace Entitys
         /// </summary>
         public System.String REPLY_ID { get { return this._REPLY_ID; } set { this._REPLY_ID = value; } }
 
-        private System.String _REPLY_TYPE;
-        /// <summary>
-        /// 
-        /// </summary>
-        public System.String REPLY_TYPE { get { return this._REPLY_TYPE; } set { this._REPLY_TYPE = value; } }
-
         private System.String _CONTENT;
         /// <summary>
         /// 
@@ -79,5 +73,11 @@ namespace Entitys
         /// 
         /// </summary>
         public System.String TO_UID { get { return this._TO_UID; } set { this._TO_UID = value; } }
+
+        private System.Int32 _FAVOUR_COUNT;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.Int32 FAVOUR_COUNT { get { return this._FAVOUR_COUNT; } set { this._FAVOUR_COUNT = value; } }
     }
 }

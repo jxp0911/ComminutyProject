@@ -6,6 +6,7 @@ using CommunityWebApi.Common;
 using CommunityWebApi.Models;
 using Entitys;
 using Newtonsoft.Json;
+using SqlSugar;
 
 namespace CommunityWebApi.Domains
 {
@@ -47,21 +48,30 @@ namespace CommunityWebApi.Domains
                     db.Insertable(model).ExecuteCommand();
 
                     //先在用户注册时，默认在用户个人信息表插入一条记录
+                    bool isExist = true;
+                    string nickName = "";
+                    do
+                    {
+                        nickName = FunctionHelper.GetRandomString(8, true, false, true, false, "");
+                        int count = db.Queryable<SYS_USER_INFO>().Where(x => x.NICK_NAME == nickName && x.STATE == "A").Count();
+                        isExist = count == 0;
+                    } while (!isExist);
+
                     SYS_USER_INFO uInfoModel = new SYS_USER_INFO();
                     uInfoModel.ID = System.Guid.NewGuid().ToString();
                     uInfoModel.DATETIME_CREATED = now;
                     uInfoModel.STATE = "A";
                     uInfoModel.TIMESTAMP_INT = timestamp;
                     uInfoModel.USER_ID = model.ID;
-                    uInfoModel.NICK_NAME = "挚爱灬(啥也不是)";
+                    uInfoModel.NICK_NAME = nickName;
                     db.Insertable(uInfoModel).ExecuteCommand();
 
 
                     LoginReturnModel lrm = new LoginReturnModel();
-                    lrm.user_info = new RetModel
+                    lrm.user_info = new UserInfoReturnModel
                     {
-                        uid = model.ID,
-                        user_name = model.ACCOUNT_NUMBER
+                        USER_ID = model.ID,
+                        NiCK_NAME = uInfoModel.NICK_NAME
                     };
                     jsonModel.status = 1;
                     jsonModel.msg = "注册成功";
@@ -99,9 +109,15 @@ namespace CommunityWebApi.Domains
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();
 
-                var data = db.Queryable<SYS_USER_ACCOUNT>()
-                    .Where(x => x.ACCOUNT_NUMBER == userId && x.STATE=="A")
-                    .First();
+                var data = db.Queryable<SYS_USER_ACCOUNT, SYS_USER_INFO>((a, b) => new object[]{
+                    JoinType.Left,a.ID==b.USER_ID&&a.STATE==b.STATE
+                }).Where((a, b) => a.ACCOUNT_NUMBER == userId && a.STATE == "A")
+                .Select((a, b) => new
+                {
+                    a.ID,
+                    a.PASSWORD,
+                    b.NICK_NAME
+                }).First();
                 if (data != null)
                 {
                     if(data.PASSWORD == passWord)
@@ -113,10 +129,10 @@ namespace CommunityWebApi.Domains
                         }).Where(x => x.ID == data.ID).ExecuteCommand();
 
                         LoginReturnModel lrm = new LoginReturnModel();
-                        lrm.user_info = new RetModel
+                        lrm.user_info = new UserInfoReturnModel
                         {
-                            uid = data.ID,
-                            user_name = data.ACCOUNT_NUMBER
+                            USER_ID = data.ID,
+                            NiCK_NAME = data.NICK_NAME
                         };
                         jsonModel.status = 1;
                         jsonModel.msg = "登录成功";
@@ -151,6 +167,9 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+
                 //返给前台的JSON实体
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();
@@ -178,12 +197,19 @@ namespace CommunityWebApi.Domains
             }
         }
 
-
+        /// <summary>
+        /// 获取用户所有权限
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         public RetJsonModel GetRolePermission(string userId)
         {
             var db = DBContext.GetInstance;
             try
             {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+
                 //返给前台的JSON实体
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();

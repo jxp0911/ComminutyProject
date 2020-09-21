@@ -22,21 +22,15 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, firstId, "FIRST_PATH");
+
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
-
-                #region 数据验证
-                Tuple<bool, string> verify = FunctionHelper.Verify(userId, firstId);
-                if (verify.Item1 == false)
-                {
-                    jsonModel.status = 0;
-                    jsonModel.msg = verify.Item2;
-                    return jsonModel;
-                }
-                #endregion
 
                 var ucData = db.Queryable<MAP_USER_CARREERPATH>()
                     .Where(x => x.USER_ID == userId && x.CP_FIRST_ID == firstId && x.STATE == "A")
@@ -83,21 +77,14 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
-
-                #region 数据验证
-                Tuple<bool, string> verify = FunctionHelper.Verify(userId);
-                if (verify.Item1 == false)
-                {
-                    jsonModel.status = 0;
-                    jsonModel.msg = verify.Item2;
-                    return jsonModel;
-                }
-                #endregion
 
                 var fIdList = db.Queryable<MAP_USER_CARREERPATH>()
                         .Where(x => x.USER_ID == userId && x.STATE == "A")
@@ -125,26 +112,20 @@ namespace CommunityWebApi.Domains
         /// <param name="pathId">职业路线ID</param>
         /// <param name="content">评论内容</param>
         /// <returns></returns>
-        public RetJsonModel PublishComment(string userId, string pathId, string content, int pathClass)
+        public RetJsonModel PublishComment(string userId, string pathId, string content,int pathType)
         {
             var db = DBContext.GetInstance;
             try
             {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, pathId, FunctionHelper.GetDescByCode(pathType));
+
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
-
-                #region 数据验证
-                Tuple<bool, string> verify = FunctionHelper.Verify(userId, "", pathId);
-                if (verify.Item1 == false)
-                {
-                    jsonModel.status = 0;
-                    jsonModel.msg = verify.Item2;
-                    return jsonModel;
-                }
-                #endregion
 
                 BUS_CAREERPATH_COMMENT commentModel = new BUS_CAREERPATH_COMMENT();
                 commentModel.ID = Guid.NewGuid().ToString();
@@ -154,7 +135,7 @@ namespace CommunityWebApi.Domains
                 commentModel.PATH_ID = pathId;
                 commentModel.CONTENT = content;
                 commentModel.FROM_UID = userId;
-                commentModel.PATH_CLASS = pathClass;
+                commentModel.PATH_TYPE = pathType;
                 db.Insertable(commentModel).ExecuteCommand();
 
                 jsonModel.status = 1;
@@ -178,26 +159,25 @@ namespace CommunityWebApi.Domains
         /// <param name="content">评论内容</param>
         /// <param name="toUid">被评论人ID</param>
         /// <returns></returns>
-        public RetJsonModel PublishReply(string userId, string commentId, string replyId,string replyType,string content,string toUid)
+        public RetJsonModel PublishReply(string userId, string commentId, string replyId,string content,string toUid)
         {
             var db = DBContext.GetInstance;
             try
             {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, toUid, "USER_ID");
+                FunctionHelper.VerifyInfo(db, commentId, "COMMENT");
+                if(commentId != replyId)
+                {
+                    FunctionHelper.VerifyInfo(db, replyId, "REPLY");
+                }
+
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
-
-                #region 数据验证
-                Tuple<bool, string> verify = FunctionHelper.Verify(userId, "", "", commentId, replyId);
-                if (verify.Item1 == false)
-                {
-                    jsonModel.status = 0;
-                    jsonModel.msg = verify.Item2;
-                    return jsonModel;
-                }
-                #endregion
 
                 BUS_COMMENT_REPLY replyModel = new BUS_COMMENT_REPLY();
                 replyModel.ID = Guid.NewGuid().ToString();
@@ -206,7 +186,6 @@ namespace CommunityWebApi.Domains
                 replyModel.TIMESTAMP_INT = timestamp;
                 replyModel.COMMENT_ID = commentId;
                 replyModel.REPLY_ID = replyId;
-                replyModel.REPLY_TYPE = replyType;
                 replyModel.CONTENT = content;
                 replyModel.FROM_UID = userId;
                 replyModel.TO_UID = toUid;
@@ -224,33 +203,39 @@ namespace CommunityWebApi.Domains
         }
 
 
-        public RetJsonModel Favour(string userId,string typeId,int type)
+        /// <summary>
+        /// 点赞/取消点赞
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="typeId">被点赞的ID</param>
+        /// <param name="favourType">点赞类型(1:一级职业路径；2:二级职业路径；3:三级职业路径；4:一级评论；5:二级评论)</param>
+        /// <param name="pathType">职业路径等级</param>
+        /// <returns></returns>
+        public RetJsonModel Favour(string userId,string typeId,int favourType)
         {
             var db = DBContext.GetInstance;
             try
             {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, typeId, FunctionHelper.GetDescByCode(favourType));
+
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
 
-                #region 数据验证
-                Tuple<bool, string> verify = FunctionHelper.Verify(userId);
-                if (verify.Item1 == false)
-                {
-                    jsonModel.status = 0;
-                    jsonModel.msg = verify.Item2;
-                    return jsonModel;
-                }
-                #endregion
-
                 var count = db.Queryable<BUS_USER_FAVOUR>()
-                    .Where(x => x.USER_ID == userId && x.TYPE_ID == typeId && x.TYPE == type && x.STATE == "A")
+                    .Where(x => x.USER_ID == userId && x.TYPE_ID == typeId && x.TYPE == favourType && x.STATE == "A")
                     .Count();
+                db.Ado.BeginTran();
+                int favourCount = 0;
+                //判断当前用户是否点过赞
                 if (count == 1)
                 {
-                    db.Deleteable<BUS_USER_FAVOUR>().Where(x => x.USER_ID == userId && x.TYPE_ID == typeId && x.STATE == "A" && x.TYPE == type).ExecuteCommand();
+                    db.Deleteable<BUS_USER_FAVOUR>().Where(x => x.USER_ID == userId && x.TYPE_ID == typeId && x.STATE == "A" && x.TYPE == favourType).ExecuteCommand();
+                    favourCount = -1;
                     jsonModel.msg = "取消成功";
                 }
                 else
@@ -262,17 +247,257 @@ namespace CommunityWebApi.Domains
                     model.TIMESTAMP_INT = timestamp;
                     model.USER_ID = userId;
                     model.TYPE_ID = typeId;
-                    model.TYPE = type;
+                    model.TYPE = favourType;
                     db.Insertable(model).ExecuteCommand();
+
+                    favourCount = 1;
 
                     jsonModel.msg = "点赞成功";
                 }
+                //根据职业路径等级更新对应的点赞数量
+                if (favourType==1)
+                {
+                    db.Updateable<BUS_CAREERPATH_FIRST>().SetColumns(x => new BUS_CAREERPATH_FIRST()
+                    {
+                        DATETIME_MODIFIED = now,
+                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
+                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
+                }
+                if (favourType == 2)
+                {
+                    db.Updateable<BUS_CAREERPATH_SECOND>().SetColumns(x => new BUS_CAREERPATH_SECOND()
+                    {
+                        DATETIME_MODIFIED = now,
+                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
+                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
+                }
+                if (favourType == 3)
+                {
+                    db.Updateable<BUS_CAREERPATH_THIRD>().SetColumns(x => new BUS_CAREERPATH_THIRD()
+                    {
+                        DATETIME_MODIFIED = now,
+                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
+                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
+                }
+                if (favourType == 4)
+                {
+                    db.Updateable<BUS_CAREERPATH_COMMENT>().SetColumns(x => new BUS_CAREERPATH_COMMENT()
+                    {
+                        DATETIME_MODIFIED = now,
+                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
+                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
+                }
+                if (favourType == 5)
+                {
+                    db.Updateable<BUS_COMMENT_REPLY>().SetColumns(x => new BUS_COMMENT_REPLY()
+                    {
+                        DATETIME_MODIFIED = now,
+                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
+                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
+                }
+                db.Ado.CommitTran();
 
                 jsonModel.status = 1;
                 return jsonModel;
             }
             catch (Exception ex)
             {
+                db.Ado.RollbackTran();
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 普通用户投票
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="modifyId">修改职业规划ID</param>
+        /// <param name="isSupport">是否赞同(1:赞同；2:反对)</param>
+        /// <returns></returns>
+        public RetJsonModel NormalVote(string userId, string modifyId,int isSupport)
+        {
+            var db = DBContext.GetInstance;
+            try
+            {
+                DateTime now = db.GetDate();
+                int timestamp = FunctionHelper.GetTimestamp();
+
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = timestamp;
+
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, modifyId, "MODIFY");
+                int count = db.Queryable<BUS_MODIFIED_VOTE>()
+                    .Where(x => x.USER_ID == userId && x.MODIFY_PATH_ID == modifyId && x.STATE == "A")
+                    .Count();
+                if (count != 0)
+                {
+                    jsonModel.status = 0;
+                    jsonModel.msg = "您已经参与过此投票";
+                    return jsonModel;
+                }
+
+                db.Ado.BeginTran();
+                //在投票记录表插入投票人的投票情况
+                BUS_MODIFIED_VOTE model = new BUS_MODIFIED_VOTE();
+                model.ID = Guid.NewGuid().ToString();
+                model.DATETIME_CREATED = now;
+                model.STATE = "A";
+                model.TIMESTAMP_INT = timestamp;
+                model.USER_ID = userId;
+                model.MODIFY_PATH_ID = modifyId;
+                model.IS_SUPPORT = isSupport;
+                db.Insertable(model).ExecuteCommand();
+
+                //根据赞成还是反对，更新修改职业规划表的投票情况
+                db.Updateable<BUS_MODIFY_PATH>()
+                    .SetColumnsIF(isSupport == 1, x => new BUS_MODIFY_PATH()
+                    {
+                        DATETIME_MODIFIED = now,
+                        SUPPORT = x.SUPPORT + 1
+                    })
+                    .SetColumnsIF(isSupport == 0, x => new BUS_MODIFY_PATH()
+                    {
+                        DATETIME_MODIFIED = now,
+                        OPPOSE = x.OPPOSE + 1
+                    }).Where(x => x.ID == modifyId && x.STATE == "A").ExecuteCommand();
+
+                db.Ado.CommitTran();
+
+                jsonModel.status = 1;
+                jsonModel.msg = "投票成功";
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                db.Ado.RollbackTran();
+                throw ex;
+            }
+        }
+
+
+        /// <summary>
+        /// Reviewer表决
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="modifyId">修改职业规划ID</param>
+        /// <param name="isSupport">是否赞同(1:赞同；2:反对)</param>
+        /// <returns></returns>
+        public RetJsonModel ReviewerVote(string userId, string modifyId, int isSupport)
+        {
+            var db = DBContext.GetInstance;
+            try
+            {
+                DateTime now = db.GetDate();
+                int timestamp = FunctionHelper.GetTimestamp();
+
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = timestamp;
+
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, modifyId, "MODIFY");
+                int isReviewer = db.Queryable<BUS_PATH_REVIEWER>()
+                    .Where(x => x.USER_ID == userId && x.MODIFY_PATH_ID == modifyId && x.STATE == "A")
+                    .Count();
+                if (isReviewer == 0)
+                {
+                    jsonModel.status = 0;
+                    jsonModel.msg = "您不是当前修改内容的Reviewer";
+                    return jsonModel;
+                }
+
+                db.Ado.BeginTran();
+                //职业规划修改审核人表 更新Reviewer的是否同意字段
+                db.Updateable<BUS_PATH_REVIEWER>().SetColumns(x => new BUS_PATH_REVIEWER()
+                {
+                    DATETIME_MODIFIED = now,
+                    IS_AGREE = isSupport
+                }).Where(x => x.USER_ID == userId && x.MODIFY_PATH_ID == modifyId && x.STATE == "A")
+                .ExecuteCommand();
+
+                int isAllAgree = db.Queryable<BUS_PATH_REVIEWER>()
+                    .Where(x => x.MODIFY_PATH_ID == modifyId && x.IS_AGREE == 0 && x.STATE == "A")
+                    .Count();
+                //判断如果所有的Reviewer都表决通过就将修改后的内容合并到主路径上
+                if (isAllAgree == 0)
+                {
+                    var modifyInfo = db.Queryable<BUS_MODIFY_PATH>()
+                        .Where(x => x.ID == modifyId && x.STATE == "A")
+                        .First();
+                    //如果修改的是二级路径
+                    if (modifyInfo.PATH_CLASS == 2)
+                    {
+                        var secondInfo = db.Queryable<BUS_CAREERPATH_SECOND>()
+                            .Where(x => x.ID == modifyInfo.PATH_ID && x.STATE == "A")
+                            .First();
+
+                        BUS_CAREERPATH_SECOND secondModel = new BUS_CAREERPATH_SECOND();
+                        secondModel.ID = Guid.NewGuid().ToString();
+                        secondModel.DATETIME_CREATED = now;
+                        secondModel.STATE = "A";
+                        secondModel.TIMESTAMP_INT = timestamp;
+                        secondModel.USER_ID = modifyInfo.USER_ID;
+                        secondModel.TITLE = modifyInfo.CONTENT;
+                        secondModel.FIRST_ID = secondInfo.FIRST_ID;
+                        secondModel.STATUS = 1;
+                        secondModel.FAVOUR_COUNT = 0;
+                        secondModel.VERSION_NO = secondInfo.VERSION_NO + 1;
+                        db.Insertable(secondModel).ExecuteCommand();
+
+                        //将原来的职业规划状态更新为已过期
+                        db.Updateable<BUS_CAREERPATH_SECOND>().SetColumns(x => new BUS_CAREERPATH_SECOND()
+                        {
+                            DATETIME_MODIFIED = now,
+                            STATE = "D"
+                        }).Where(x => x.ID == secondInfo.ID).ExecuteCommand();
+                    }
+                    //如果修改的是三级路径
+                    if (modifyInfo.PATH_CLASS == 3)
+                    {
+                        var thirdInfo = db.Queryable<BUS_CAREERPATH_THIRD>()
+                            .Where(x => x.ID == modifyInfo.PATH_ID && x.STATE == "A")
+                            .First();
+
+                        BUS_CAREERPATH_THIRD thirdModel = new BUS_CAREERPATH_THIRD();
+                        thirdModel.ID = Guid.NewGuid().ToString();
+                        thirdModel.DATETIME_CREATED = now;
+                        thirdModel.STATE = "A";
+                        thirdModel.TIMESTAMP_INT = timestamp;
+                        thirdModel.USER_ID = modifyInfo.USER_ID;
+                        thirdModel.TITLE = modifyInfo.CONTENT;
+                        thirdModel.FIRST_ID = thirdInfo.FIRST_ID;
+                        thirdModel.SECOND_ID = thirdInfo.SECOND_ID;
+                        thirdModel.STATUS = 1;
+                        thirdModel.FAVOUR_COUNT = 0;
+                        thirdModel.VERSION_NO = thirdInfo.VERSION_NO + 1;
+                        db.Insertable(thirdModel).ExecuteCommand();
+
+                        //将原来的职业规划状态更新为已过期
+                        db.Updateable<BUS_CAREERPATH_THIRD>().SetColumns(x => new BUS_CAREERPATH_THIRD()
+                        {
+                            DATETIME_MODIFIED = now,
+                            STATE = "D"
+                        }).Where(x => x.ID == thirdInfo.ID).ExecuteCommand();
+                    }
+                    //更新修改职业规划表的是否合并字段为Y
+                    db.Updateable<BUS_MODIFY_PATH>().SetColumns(x => new BUS_MODIFY_PATH()
+                    {
+                        DATETIME_MODIFIED = now,
+                        IS_MERGE = "Y"
+                    }).Where(x => x.ID == modifyInfo.ID && x.STATE == "A").ExecuteCommand();
+                }
+
+                db.Ado.CommitTran();
+
+                jsonModel.status = 1;
+                jsonModel.msg = "投票成功";
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                db.Ado.RollbackTran();
                 throw ex;
             }
         }

@@ -43,31 +43,11 @@ namespace CommunityWebApi.Controllers
             }
         }
 
-
-        [Route("api/user/getfocus")]
-        [HttpGet]
-        public IHttpActionResult GetFocusInfo(string user_id,int cursor,int count)
-        {
-            RetJsonModel result = new RetJsonModel();
-            try
-            {
-                UserDomain UD = new UserDomain();
-                result = UD.GetUserFocus(user_id, cursor, count);
-                return Json(result);
-            }
-            catch (Exception ex)
-            {
-                //记录失败日志
-                FunctionHelper.SaveFailLog("User", "GetFocusInfo", "api/user/getfocus", "获取当前用户所有关注的职业路径", "用户ID：" + user_id, ex.Message.ToString(), "GET");
-
-                result.status = 0;
-                result.time = FunctionHelper.GetTimestamp();
-                result.msg = "失败,请重试";
-                return Json(result);
-            }
-        }
-
-
+        /// <summary>
+        /// 发表一级评论接口
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         [Route("api/user/p/comment")]
         [HttpPost]
         public IHttpActionResult PostComment([FromBody]dynamic value)
@@ -78,10 +58,10 @@ namespace CommunityWebApi.Controllers
                 string UserId = Convert.ToString(value.user_id);
                 string pathId = Convert.ToString(value.path_id);
                 string content = Convert.ToString(value.content);
-                int pathClass = Convert.ToInt32(value.path_class);
+                int pathType = Convert.ToInt32(value.path_type);
 
                 UserDomain UD = new UserDomain();
-                result = UD.PublishComment(UserId, pathId, content, pathClass);
+                result = UD.PublishComment(UserId, pathId, content, pathType);
                 return Json(result);
             }
             catch (Exception ex)
@@ -96,7 +76,11 @@ namespace CommunityWebApi.Controllers
             }
         }
 
-
+        /// <summary>
+        /// 发表二级评论接口
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         [Route("api/user/p/reply")]
         [HttpPost]
         public IHttpActionResult PostReply([FromBody]dynamic value)
@@ -108,11 +92,10 @@ namespace CommunityWebApi.Controllers
                 string commentId = Convert.ToString(value.comment_id);
                 string replyId = Convert.ToString(value.reply_id);
                 string content = Convert.ToString(value.content);
-                string replyType = Convert.ToString(value.reply_type);
                 string toUid = Convert.ToString(value.to_uid);
 
                 UserDomain UD = new UserDomain();
-                result = UD.PublishReply(UserId, commentId, replyId, replyType, content, toUid);
+                result = UD.PublishReply(UserId, commentId, replyId, content, toUid);
                 return Json(result);
             }
             catch (Exception ex)
@@ -127,6 +110,11 @@ namespace CommunityWebApi.Controllers
             }
         }
 
+        /// <summary>
+        /// 点赞接口
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
         [Route("api/user/p/favour")]
         [HttpPost]
         public IHttpActionResult PostFavour([FromBody]dynamic value)
@@ -136,16 +124,80 @@ namespace CommunityWebApi.Controllers
             {
                 string UserId = Convert.ToString(value.user_id);
                 string typeId = Convert.ToString(value.type_id);
-                int type = Convert.ToInt32(value.type);
+                int favourType = Convert.ToInt32(value.favour_type);
 
                 UserDomain UD = new UserDomain();
-                result = UD.Favour(UserId, typeId, type);
+                result = UD.Favour(UserId, typeId, favourType);
                 return Json(result);
             }
             catch (Exception ex)
             {
                 //记录失败日志
                 FunctionHelper.SaveFailLog("User", "PostFavour", "api/user/p/favour", "点赞接口", Convert.ToString(value), ex.Message.ToString(), "POST");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "失败,请重试";
+                return Json(result);
+            }
+        }
+
+        /// <summary>
+        /// 投票接口
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [Route("api/user/p/nvote")]
+        [HttpPost]
+        public IHttpActionResult PostNormalVote([FromBody]dynamic value)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                string UserId = Convert.ToString(value.user_id);
+                string modifyId = Convert.ToString(value.modify_id);
+                int isSupport = Convert.ToInt32(value.is_support);
+
+                UserDomain UD = new UserDomain();
+                result = UD.NormalVote(UserId, modifyId, isSupport);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("User", "PostVote", "api/user/p/nvote", "投票接口", Convert.ToString(value), ex.Message.ToString(), "POST");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "失败,请重试";
+                return Json(result);
+            }
+        }
+
+        /// <summary>
+        /// Reviewer表决接口
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [Route("api/user/p/rvote")]
+        [HttpPost]
+        public IHttpActionResult PostReviewerVote([FromBody]dynamic value)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                string UserId = Convert.ToString(value.user_id);
+                string modifyId = Convert.ToString(value.modify_id);
+                int isSupport = Convert.ToInt32(value.is_support);
+
+                UserDomain UD = new UserDomain();
+                result = UD.ReviewerVote(UserId, modifyId, isSupport);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("User", "PostReviewerVote", "api/user/p/rvote", "Reviewer表决接口", Convert.ToString(value), ex.Message.ToString(), "POST");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();

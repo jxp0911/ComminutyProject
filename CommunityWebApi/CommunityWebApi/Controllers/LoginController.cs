@@ -96,7 +96,7 @@ namespace CommunityWebApi.Controllers
                 FunctionHelper.SaveFailLog("Login", "PostIsLogin", "api/login/status", "验证账号是否处在登陆中", Convert.ToString(value), ex.Message.ToString(), "POST");
 
                 result.status = 0;
-                result.msg = "请重试";
+                result.msg = "数据异常，请重试";
                 result.time = FunctionHelper.GetTimestamp();
                 result.data = false;
                 return Json(result);
@@ -126,7 +126,7 @@ namespace CommunityWebApi.Controllers
                 FunctionHelper.SaveFailLog("Login", "GetPermission", "api/login/per", "获取当前账号拥有的权限", "当前登录用户ID：" + user_id, ex.Message.ToString(), "POST");
 
                 result.status = 0;
-                result.msg = "请重试";
+                result.msg = "数据异常，请重试";
                 result.time = FunctionHelper.GetTimestamp();
                 result.data = new List<string>();
                 return Json(result);

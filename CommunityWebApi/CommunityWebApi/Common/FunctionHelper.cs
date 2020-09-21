@@ -6,6 +6,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Web;
+using SqlSugar;
 
 namespace CommunityWebApi.Common
 {
@@ -75,69 +76,80 @@ namespace CommunityWebApi.Common
         /// <param name="commentId">评论表ID</param>
         /// <param name="replyId">回复表ID</param>
         /// <returns></returns>
-        public static Tuple<bool,string> Verify(string userId,string firstId = "",string pathId = "",string commentId="",string replyId="")
+        public static bool VerifyInfo(SqlSugarClient db, string info, string type)
         {
             try
             {
-                var db = DBContext.GetInstance;
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    var userCount = db.Queryable<SYS_USER_ACCOUNT>()
-                    .Where(x => x.ID == userId && x.STATE == "A")
-                    .Count();
-                    if (userCount == 0)
-                    {
-                        return new Tuple<bool, string>(false,"账号异常");
-                    }
-                }
-                if (!string.IsNullOrEmpty(firstId))
-                {
-                    var careerCount = db.Queryable<BUS_CAREERPATH_FIRST>()
-                    .Where(x => x.ID == firstId && x.STATE == "A")
-                    .Count();
-                    if (careerCount == 0)
-                    {
-                        return new Tuple<bool, string>(false, "请求异常请刷新重新");
-                    }
-                }
-                if (!string.IsNullOrEmpty(pathId))
-                {
-                    var careerCount = db.Queryable<BUS_CAREERPATH_THIRD>()
-                    .Where(x => (x.ID == pathId || x.FIRST_ID == pathId || x.SECOND_ID == pathId))
-                    .Count();
-                    if (careerCount == 0)
-                    {
-                        return new Tuple<bool, string>(false, "请求异常请刷新重新");
-                    }
-                }
-                if (!string.IsNullOrEmpty(commentId))
-                {
-                    var careerCount = db.Queryable<BUS_CAREERPATH_COMMENT>()
-                    .Where(x => x.ID == commentId && x.STATE == "A")
-                    .Count();
-                    if (careerCount == 0)
-                    {
-                        return new Tuple<bool, string>(false, "请求异常请刷新重新");
-                    }
-                }
-                if (!string.IsNullOrEmpty(replyId))
-                {
-                    var careerCount = db.Queryable<BUS_COMMENT_REPLY>()
-                    .Where(x => x.ID == replyId && x.STATE == "A")
-                    .Count();
-                    if (careerCount == 0)
-                    {
-                        return new Tuple<bool, string>(false, "请求异常请刷新重新");
-                    }
-                }
-                return new Tuple<bool, string>(true, "");
+                VerifyHelper varify = new VerifyHelper();
+                return varify.VerifyInfo(db, info, type);
             }
             catch (Exception ex)
             {
-                return new Tuple<bool, string>(false, "请重试");
+                throw ex;
             }
         }
 
+        ///<summary>
+        ///生成随机字符串 
+        ///</summary>
+        ///<param name="length">目标字符串的长度</param>
+        ///<param name="useNum">是否包含数字，1=包含，默认为包含</param>
+        ///<param name="useLow">是否包含小写字母，1=包含，默认为包含</param>
+        ///<param name="useUpp">是否包含大写字母，1=包含，默认为包含</param>
+        ///<param name="useSpe">是否包含特殊字符，1=包含，默认为不包含</param>
+        ///<param name="custom">要包含的自定义字符，直接输入要包含的字符列表</param>
+        ///<returns>指定长度的随机字符串</returns>
+        public static string GetRandomString(int length, bool useNum, bool useLow, bool useUpp, bool useSpe, string custom)
+        {
+            byte[] b = new byte[4];
+            new System.Security.Cryptography.RNGCryptoServiceProvider().GetBytes(b);
+            Random r = new Random(BitConverter.ToInt32(b, 0));
+            string s = null, str = custom;
+            if (useNum == true) { str += "0123456789"; }
+            if (useLow == true) { str += "abcdefghijklmnopqrstuvwxyz"; }
+            if (useUpp == true) { str += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"; }
+            if (useSpe == true) { str += "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"; }
+            for (int i = 0; i < length; i++)
+            {
+                s += str.Substring(r.Next(0, str.Length - 1), 1);
+            }
+            return s;
+        }
+
+        /// <summary>
+        /// 评论接口favour_type传过来的code对应的评论内容类型
+        /// </summary>
+        /// <param name="code">区分哪张表的ID(1:一级职业规划表;2:二级职业规划表;3:三级职业规划表;4:一级评论表;5:二级评论表;6:修改职业规划表;)</param>
+        /// <returns></returns>
+        public static string GetDescByCode(int code)
+        {
+            if (code == 1)
+            {
+                return "FIRST_PATH";
+            }
+            if (code == 2)
+            {
+                return "SECOND_PATH";
+            }
+            if (code == 3)
+            {
+                return "THIRD_PATH";
+            }
+            if (code == 4)
+            {
+                return "COMMENT";
+            }
+            if (code == 5)
+            {
+                return "REPLY";
+            }
+            if (code == 6)
+            {
+                return "MODIFY";
+            }
+
+            return "";
+        }
 
         #region -------------------------DES加密解密-------------------------
         /// <summary>
@@ -224,6 +236,5 @@ namespace CommunityWebApi.Common
             }
         }
         #endregion
-
     }
 }

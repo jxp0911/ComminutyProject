@@ -79,5 +79,11 @@ namespace Entitys
         /// 
         /// </summary>
         public System.Int32 FAVOUR_COUNT { get { return this._FAVOUR_COUNT; } set { this._FAVOUR_COUNT = value; } }
+
+        private System.Int32 _VERSION_NO;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.Int32 VERSION_NO { get { return this._VERSION_NO; } set { this._VERSION_NO = value; } }
     }
 }

@@ -10,6 +10,10 @@ namespace CommunityWebApi.Models
     {
         [JsonProperty(PropertyName = "title")]
         public string Title { get; set; }
+        [JsonProperty(PropertyName = "topic_id")]
+        public string TOPIC_ID { get; set; }
+        [JsonProperty(PropertyName = "faq_id")]
+        public string FAQ_ID { get; set; }
 
         [JsonProperty(PropertyName = "second_list")]
         public List<FeedPathSecondModel> SecondList { get; set; }

@@ -23,7 +23,7 @@ namespace CommunityWebApi.Controllers
                 string UserId = Convert.ToString(value.user_id);
                 FeedPathFirstModel feedModel = JsonConvert.DeserializeObject<FeedPathFirstModel>(Convert.ToString(value.feed_info));
                 FeedDomain FD = new FeedDomain();
-                result = FD.FeedPath(UserId, feedModel);
+                result = FD.PostPath(UserId, feedModel);
                 return Json(result);
             }
             catch (Exception ex)
@@ -33,21 +33,20 @@ namespace CommunityWebApi.Controllers
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
-                result.msg = "提交失败";
+                result.msg = "提交失败，请重试";
                 return Json(result);
             }
-
         }
 
         [Route("bus/feed/getfeed")]
         [HttpGet]
-        public IHttpActionResult Get(string uid,int cursor, int count,int status)
+        public IHttpActionResult Get(string uid,int cursor, int count,int status,string topic_id, string faq_id, bool is_own)
         {
             RetJsonModel result = new RetJsonModel();
             try
             {
                 FeedDomain FD = new FeedDomain();
-                result = FD.GetFeedPath(uid, cursor, count, status);
+                result = FD.GetFeedPath(uid, cursor, count, status, topic_id, faq_id, is_own);
                 return Json(result);
             }
             catch (Exception ex)
@@ -57,7 +56,7 @@ namespace CommunityWebApi.Controllers
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
-                result.msg = "失败";
+                result.msg = "数据异常，请重试";
                 return Json(result);
             }
 
@@ -85,7 +84,7 @@ namespace CommunityWebApi.Controllers
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
-                result.msg = "失败，请重试";
+                result.msg = "审核失败，请重试";
                 return Json(result);
             }
 
@@ -110,10 +109,211 @@ namespace CommunityWebApi.Controllers
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
-                result.msg = "失败，请重试";
+                result.msg = "数据异常，请重试";
                 return Json(result);
             }
 
+        }
+
+
+        [Route("bus/feed/modify")]
+        [HttpPost]
+        public IHttpActionResult PostModify([FromBody]dynamic value)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                string userId = Convert.ToString(value.user_id);
+                string pathId = Convert.ToString(value.path_id);
+                string content = Convert.ToString(value.content);
+                int pathClass = Convert.ToInt32(value.path_class);
+
+                FeedDomain FD = new FeedDomain();
+                result = FD.ModifyPath(userId, pathId, pathClass, content);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Feed", "PostModify", "bus/feed/modify", "发起对某一级职业规划修改的接口", Convert.ToString(value), ex.Message.ToString(), "POST");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "数据异常，请重试";
+                return Json(result);
+            }
+
+        }
+
+        [Route("bus/feed/hmodify")]
+        [HttpGet]
+        public IHttpActionResult GetHistortModify(string user_id, string path_id, int path_class, int cursor, int count)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                FeedDomain FD = new FeedDomain();
+                result = FD.GetHistortModify(user_id, path_id, path_class, cursor, count);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                string message = "用户ID：" + user_id + "；职业规划ID：" + path_id + "；职业规划等级：" + path_class + "；已下发数：" + cursor + "；本次请求数：" + count;
+                FunctionHelper.SaveFailLog("Feed", "GetHistortModify", "bus/feed/hmodify", "查询某一职业规划的历史修改记录", message, ex.Message.ToString(), "GET");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "数据异常，请重试";
+                return Json(result);
+            }
+
+        }
+
+        [Route("bus/feed/modify/detailed")]
+        [HttpGet]
+        public IHttpActionResult GetModifyDetailedInfo(string user_id, string modify_id)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                FeedDomain FD = new FeedDomain();
+                result = FD.GetModifyDetailedInfo(user_id, modify_id);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                string message = "用户ID：" + user_id + "；修改职业规划表ID：" + modify_id;
+                FunctionHelper.SaveFailLog("Feed", "GetModifyDetailedInfo", "bus/feed/hmodif/detailed", "查询修改职业规划的详情页", message, ex.Message.ToString(), "GET");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "数据异常，请重试";
+                return Json(result);
+            }
+
+        }
+
+        [Route("bus/feed/gettopics")]
+        [HttpGet]
+        public IHttpActionResult GetTopics(int cursor, int count,bool is_need_path)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                FeedDomain FD = new FeedDomain();
+                result = FD.GetTopics(cursor, count, is_need_path);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Feed", "GetTopics", "bus/feed/gettopics", "获取所有的话题", "已下发数：" + cursor + "；本次请求数：" + count+";是否需要带一条职业规划"+is_need_path, ex.Message.ToString(), "GET");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "数据异常，请重试";
+                return Json(result);
+            }
+        }
+
+        [Route("bus/feed/publishques")]
+        [HttpPost]
+        public IHttpActionResult PublishQues([FromBody]dynamic value)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                string UserId = Convert.ToString(value.user_id);
+                string Desc = Convert.ToString(value.desc);
+                string TopicName = Convert.ToString(value.topic_name);
+                FeedDomain FD = new FeedDomain();
+                result = FD.PublishQues(UserId, Desc, TopicName);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Feed", "PublishQues", "bus/feed/publishques", "问答-发起提问接口", Convert.ToString(value), ex.Message.ToString(), "POST");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "提交失败，请重试";
+                return Json(result);
+            }
+        }
+
+        [Route("bus/feed/gettopicinfo")]
+        [HttpGet]
+        public IHttpActionResult GetTopicDtlById(string user_id, string topic_id)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                FeedDomain FD = new FeedDomain();
+                result = FD.GetTopicDtlById(user_id, topic_id);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Feed", "GetTopicDtlById", "bus/feed/gettopicinfo", "根据话题ID获取话题的详细信息", $"用户ID：{user_id}；话题ID：{topic_id};", ex.Message.ToString(), "GET");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "数据异常，请重试";
+                return Json(result);
+            }
+        }
+        [Route("bus/feed/getfaqinfo")]
+        [HttpGet]
+        public IHttpActionResult GetFaqDtlById(string user_id, string faq_id)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                FeedDomain FD = new FeedDomain();
+                result = FD.GetFaqDtlById(user_id, faq_id);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Feed", "GetTopicDtlById", "bus/feed/gettopicinfo", "根据话题ID获取话题的详细信息", $"用户ID：{user_id}；问答ID：{faq_id};", ex.Message.ToString(), "GET");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "数据异常，请重试";
+                return Json(result);
+            }
+        }
+        [Route("bus/feed/share")]
+        [HttpPost]
+        public IHttpActionResult ShareContent([FromBody]dynamic value)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                string UserId = Convert.ToString(value.user_id);
+                string ContentId = Convert.ToString(value.content_id);
+                string ToSharedId = Convert.ToString(value.to_shared_id);
+                int ShareType = Convert.ToInt32(value.share_type);
+
+                FeedDomain FD = new FeedDomain();
+                result = FD.ShareContent(UserId, ContentId, ToSharedId, ShareType);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Feed", "ShareContent", "bus/feed/share", "分享接口", Convert.ToString(value), ex.Message.ToString(), "POST");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "提交失败，请重试";
+                return Json(result);
+            }
         }
     }
 }

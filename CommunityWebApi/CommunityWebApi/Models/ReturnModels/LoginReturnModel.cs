@@ -7,11 +7,13 @@ namespace CommunityWebApi.Models
 {
     public class LoginReturnModel
     {
-        public RetModel user_info { get; set; } = new RetModel();
+        public UserInfoReturnModel user_info { get; set; } = new UserInfoReturnModel();
     }
     public class RetModel
     {
         public string uid { get; set; }
         public string user_name { get; set; }
     }
+
+
 }

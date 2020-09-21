@@ -62,10 +62,16 @@ namespace Entitys
         /// </summary>
         public System.String FROM_UID { get { return this._FROM_UID; } set { this._FROM_UID = value; } }
 
-        private System.Int32 _PATH_CLASS;
+        private System.Int32 _FAVOUR_COUNT;
         /// <summary>
         /// 
         /// </summary>
-        public System.Int32 PATH_CLASS { get { return this._PATH_CLASS; } set { this._PATH_CLASS = value; } }
+        public System.Int32 FAVOUR_COUNT { get { return this._FAVOUR_COUNT; } set { this._FAVOUR_COUNT = value; } }
+
+        private System.Int32 _PATH_TYPE;
+        /// <summary>
+        /// 
+        /// </summary>
+        public System.Int32 PATH_TYPE { get { return this._PATH_TYPE; } set { this._PATH_TYPE = value; } }
     }
 }
