@@ -473,9 +473,12 @@ namespace CommunityWebApi.Models
     [JsonObject(MemberSerialization.OptIn)]
     public class PlanDetailReturnModel
     {
+        //计划头ID
+        [JsonProperty(PropertyName = "plan_id")]
+        public string PLAN_ID { get; set; }
         //计划明细ID
         [JsonProperty(PropertyName = "plan_dtl_id")]
-        public string ID { get; set; }
+        public string PLAN_DTL_ID { get; set; }
         //创建时间
         [JsonProperty(PropertyName = "datetime_created")]
         public int TIMESTAMP { get; set; }

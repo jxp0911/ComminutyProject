@@ -168,8 +168,9 @@ namespace CommunityWebApi.Domains
                 //判断是否还有更多职业规划
                 var pathCount = db.Queryable<BUS_CAREERPATH_FIRST>()
                     .Where(x => x.STATUS == status && x.STATE == "A")
-                    .WhereIF(!string.IsNullOrEmpty(topicId), $"ID in (select a.FIRST_PATH_ID from MAP_PATH_TOPIC a where a.TOPIC_ID='{topicId}')")
-                    .WhereIF(!string.IsNullOrEmpty(faqId), $"ID in (select b.FIRST_PATH_ID from MAP_PATH_FAQ b where b.FAQ_ID='{faqId}')")
+                    .WhereIF(isOwn == true, $"ID in (select c.CP_FIRST_ID from MAP_USER_CARREERPATH c where c.USER_ID='{userId}' and c.STATE='A')")
+                    .WhereIF(!string.IsNullOrEmpty(topicId), $"ID in (select a.FIRST_PATH_ID from MAP_PATH_TOPIC a where a.TOPIC_ID='{topicId}' and a.STATE='A')")
+                    .WhereIF(!string.IsNullOrEmpty(faqId), $"ID in (select b.FIRST_PATH_ID from MAP_PATH_FAQ b where b.FAQ_ID='{faqId}' and b.STATE='A')")
                     .Count();
                 bool has_more = true;
                 if (path_list.Count + cursor >= pathCount)
@@ -1364,7 +1365,8 @@ namespace CommunityWebApi.Domains
                         .OrderBy(x => x.SEQ, OrderByType.Asc)
                         .Select(x => new PlanDetailReturnModel
                         {
-                            ID = x.ID,
+                            PLAN_ID=item.PLAN_ID,
+                            PLAN_DTL_ID = x.ID,
                             TIMESTAMP = x.TIMESTAMP_INT,
                             CONTENT = x.CONTENT,
                             STATUS = x.STATUS,

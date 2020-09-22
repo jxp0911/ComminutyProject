@@ -59,7 +59,6 @@ namespace CommunityWebApi.Controllers
                 result.msg = "数据异常，请重试";
                 return Json(result);
             }
-
         }
 
 

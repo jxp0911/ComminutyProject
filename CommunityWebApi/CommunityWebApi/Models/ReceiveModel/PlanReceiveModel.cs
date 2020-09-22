@@ -21,7 +21,7 @@ namespace CommunityWebApi.Models
     public class PlanDetailModel
     {
         [JsonProperty(PropertyName = "plan_dtl_id")]
-        public string ID { get; set; }
+        public string PLAN_DTL_ID { get; set; }
         [JsonProperty(PropertyName = "content")]
         public string CONTENT { get; set; }
     }
