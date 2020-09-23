@@ -416,6 +416,14 @@ namespace CommunityWebApi.Domains
             }
         }
 
+        /// <summary>
+        /// 根据职业规划ID查询计划
+        /// </summary>
+        /// <param name="userId">用户ID</param>
+        /// <param name="pathId">职业规划头ID</param>
+        /// <param name="cursor"></param>
+        /// <param name="count"></param>
+        /// <returns></returns>
         public RetJsonModel GetPlanByPath(string userId,string pathId, int cursor, int count)
         {
             try

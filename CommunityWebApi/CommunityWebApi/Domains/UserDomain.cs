@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using CommunityWebApi.Common;
 using CommunityWebApi.Models;
+using CommunityWebApi.RealizeInterface;
 using Entitys;
 using Newtonsoft.Json;
 
@@ -226,75 +227,10 @@ namespace CommunityWebApi.Domains
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
 
-                var count = db.Queryable<BUS_USER_FAVOUR>()
-                    .Where(x => x.USER_ID == userId && x.TYPE_ID == typeId && x.TYPE == favourType && x.STATE == "A")
-                    .Count();
                 db.Ado.BeginTran();
-                int favourCount = 0;
-                //判断当前用户是否点过赞
-                if (count == 1)
-                {
-                    db.Deleteable<BUS_USER_FAVOUR>().Where(x => x.USER_ID == userId && x.TYPE_ID == typeId && x.STATE == "A" && x.TYPE == favourType).ExecuteCommand();
-                    favourCount = -1;
-                    jsonModel.msg = "取消成功";
-                }
-                else
-                {
-                    BUS_USER_FAVOUR model = new BUS_USER_FAVOUR();
-                    model.ID = Guid.NewGuid().ToString();
-                    model.DATETIME_CREATED = now;
-                    model.STATE = "A";
-                    model.TIMESTAMP_INT = timestamp;
-                    model.USER_ID = userId;
-                    model.TYPE_ID = typeId;
-                    model.TYPE = favourType;
-                    db.Insertable(model).ExecuteCommand();
 
-                    favourCount = 1;
-
-                    jsonModel.msg = "点赞成功";
-                }
-                //根据职业路径等级更新对应的点赞数量
-                if (favourType==1)
-                {
-                    db.Updateable<BUS_CAREERPATH_FIRST>().SetColumns(x => new BUS_CAREERPATH_FIRST()
-                    {
-                        DATETIME_MODIFIED = now,
-                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
-                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
-                }
-                if (favourType == 2)
-                {
-                    db.Updateable<BUS_CAREERPATH_SECOND>().SetColumns(x => new BUS_CAREERPATH_SECOND()
-                    {
-                        DATETIME_MODIFIED = now,
-                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
-                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
-                }
-                if (favourType == 3)
-                {
-                    db.Updateable<BUS_CAREERPATH_THIRD>().SetColumns(x => new BUS_CAREERPATH_THIRD()
-                    {
-                        DATETIME_MODIFIED = now,
-                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
-                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
-                }
-                if (favourType == 4)
-                {
-                    db.Updateable<BUS_CAREERPATH_COMMENT>().SetColumns(x => new BUS_CAREERPATH_COMMENT()
-                    {
-                        DATETIME_MODIFIED = now,
-                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
-                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
-                }
-                if (favourType == 5)
-                {
-                    db.Updateable<BUS_COMMENT_REPLY>().SetColumns(x => new BUS_COMMENT_REPLY()
-                    {
-                        DATETIME_MODIFIED = now,
-                        FAVOUR_COUNT = x.FAVOUR_COUNT + favourCount
-                    }).Where(x => x.ID == typeId && x.STATE == "A").ExecuteCommand();
-                }
+                RunFunction RF = new RunFunction();
+                RF.RunFavour(db,userId,typeId,favourType,now,timestamp,new)
                 db.Ado.CommitTran();
 
                 jsonModel.status = 1;

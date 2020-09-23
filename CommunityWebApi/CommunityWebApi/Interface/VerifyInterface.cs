@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SqlSugar;
 
-namespace CommunityWebApi.Common
+namespace CommunityWebApi.Interface
 {
     interface VerifyInterface
     {
