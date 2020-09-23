@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using CommunityWebApi.Common;
+using CommunityWebApi.Interface;
 using CommunityWebApi.Models;
 using CommunityWebApi.RealizeInterface;
 using Entitys;
@@ -230,10 +231,13 @@ namespace CommunityWebApi.Domains
                 db.Ado.BeginTran();
 
                 RunFunction RF = new RunFunction();
-                RF.RunFavour(db,userId,typeId,favourType,now,timestamp,new)
+                IGiveFavour GFClass = InterfaceArray.ListGF[favourType];
+                RF.RunFavour(db, userId, typeId, favourType, now, timestamp, GFClass);
+
                 db.Ado.CommitTran();
 
                 jsonModel.status = 1;
+                jsonModel.msg = "点赞成功";
                 return jsonModel;
             }
             catch (Exception ex)
