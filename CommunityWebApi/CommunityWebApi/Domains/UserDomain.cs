@@ -231,7 +231,8 @@ namespace CommunityWebApi.Domains
                 db.Ado.BeginTran();
 
                 RunFunction RF = new RunFunction();
-                IGiveFavour GFClass = InterfaceArray.ListGF[favourType];
+                IGiveFavour GFClass = InterfaceArray.DicGF[favourType];
+
                 RF.RunFavour(db, userId, typeId, favourType, now, timestamp, GFClass);
 
                 db.Ado.CommitTran();

@@ -162,7 +162,12 @@ namespace CommunityWebApi.Domains
                         .Where(x => x.USER_ID == userId && x.STATE == "A")
                         .Select(x => x.CP_FIRST_ID).ToList();
                     if (fIdList.Count == 0)
-                        fIdList = null;
+                    {
+                        jsonModel.status = 1;
+                        jsonModel.msg = "没有关注的职业规划";
+                        jsonModel.data = null; 
+                        return jsonModel;
+                    }
                 }
                 List<FeedFirstReturnModel> path_list = GetFeedInfo(db, userId, cursor, count, status, fIdList, topicId, faqId);
                 //判断是否还有更多职业规划

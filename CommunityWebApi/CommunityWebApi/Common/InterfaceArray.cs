@@ -9,13 +9,16 @@ namespace CommunityWebApi.Common
 {
     public static class InterfaceArray
     {
-        public static IGiveFavour[] ListGF =
+        //存储所有点赞实例化的字典
+        public static Dictionary<int, IGiveFavour> DicGF = new Dictionary<int, IGiveFavour>();
+        static InterfaceArray()
         {
-            new GiveFavourFirstPath(),
-            new GiveFavourSecondPath(),
-            new GiveFavourThirdPath(),
-            new GiveFavourFirstComment(),
-            new GiveFavourFirstReply()
-        };
+            DicGF.Add(1, new GiveFavourFirstPath());//一级职业规划
+            DicGF.Add(2, new GiveFavourSecondPath());//二级职业规划
+            DicGF.Add(3, new GiveFavourThirdPath());//三级职业规划
+            DicGF.Add(4, new GiveFavourFirstComment());//评论
+            DicGF.Add(5, new GiveFavourFirstReply());//回复
+            DicGF.Add(6, new GiveFavourPlan());//计划
+        }
     }
 }

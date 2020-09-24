@@ -373,6 +373,10 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, planId, "PLAN_HEAD");
+                FunctionHelper.VerifyInfo(db, planDtlId, "PLAN_DTL");
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -495,6 +499,110 @@ namespace CommunityWebApi.Domains
             }
             catch (Exception ex)
             {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 应用他人的计划
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="planId">计划头ID</param>
+        /// <returns></returns>
+        public RetJsonModel UserOtherPlan(string userId, string planId, string pathId)
+        {
+            var db = DBContext.GetInstance;
+            try
+            {
+                //数据校验
+                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
+                FunctionHelper.VerifyInfo(db, planId, "PLAN_HEAD");
+                FunctionHelper.VerifyInfo(db, pathId, "FIRST_PATH");
+                DateTime now = db.GetDate();
+                int timestamp = FunctionHelper.GetTimestamp();
+
+                db.Ado.BeginTran();
+                //更新原作者计划头表的被应用次数
+                db.Updateable<BUS_PLAN_HEADER>().SetColumns(x => new BUS_PLAN_HEADER
+                {
+                    SHARED_COUNT = x.SHARED_COUNT + 1
+                }).Where(x => x.ID == planId && x.IS_SHARED == 1 && x.STATE == "A").ExecuteCommand();
+
+                //删除仅自己可见的原计划
+                var oldplanId = db.Queryable<BUS_PLAN_HEADER>()
+                    .Where(x => x.USER_ID == userId && x.FIRST_PATH_ID == pathId && x.STATE == "A")
+                    .Select(x => x.ID).First();
+                db.Deleteable<BUS_PLAN_HEADER>().Where(x => x.ID == planId && x.STATE == "A").ExecuteCommand();
+                db.Deleteable<BUS_PLAN_DETAIL>().Where(x => x.HEADER_ID == planId && x.VISIBLE_TYPE == 1 && x.STATE == "A").ExecuteCommand();
+
+                //插入新应用人的计划头表
+                var otherplan = db.Queryable<BUS_PLAN_HEADER>()
+                    .Where(x => x.ID == planId && x.STATE == "A" && x.IS_SHARED == 1)
+                    .Select(x => new BUS_PLAN_HEADER
+                    {
+                        STATE = x.STATE,
+                        TIMESTAMP_INT = timestamp,
+                        USER_ID = userId,
+                        STATUS = 0,
+                        FAVOUR_COUNT = 0,
+                        SOURCE_TYPE = 2,
+                        FIRST_PATH_ID = x.FIRST_PATH_ID,
+                        IS_SHARED = 0,
+                        SOURCE_USER_ID = x.USER_ID,
+                        SHARED_COUNT = 0,
+                        SHARE_VERSION = 0
+                    }).First();
+                otherplan.ID = Guid.NewGuid().ToString();
+                otherplan.DATETIME_CREATED = now;
+                db.Insertable(otherplan).ExecuteCommand();
+
+                //插入新应用人的计划明细表
+                var otherplandtl = db.Queryable<BUS_PLAN_DETAIL>()
+                    .Where(x => x.HEADER_ID == planId && x.VISIBLE_TYPE == 2 && x.STATE == "A")
+                    .Select(x => new BUS_PLAN_DETAIL
+                    {
+                        STATE = x.STATE,
+                        HEADER_ID = otherplan.ID,
+                        SEQ = x.SEQ,
+                        CONTENT = x.CONTENT,
+                        STATUS = x.STATUS,
+                        VISIBLE_TYPE = 1,
+                        TIMESTAMP_INT = timestamp
+                    }).ToList();
+                otherplandtl.ForEach(x =>
+                {
+                    x.ID = Guid.NewGuid().ToString();
+                    x.DATETIME_CREATED = now;
+                });
+                db.Insertable(otherplandtl).ExecuteCommand();
+
+                //判断是否已经关注当前职业规划，若未关注则自动关注
+                var isFocus = db.Queryable<MAP_USER_CARREERPATH>()
+                    .Where(x => x.USER_ID == userId && x.CP_FIRST_ID == pathId && x.STATE == "A")
+                    .Count();
+                if (isFocus == 0)
+                {
+                    MAP_USER_CARREERPATH mapModel = new MAP_USER_CARREERPATH();
+                    mapModel.ID = Guid.NewGuid().ToString();
+                    mapModel.DATETIME_CREATED = now;
+                    mapModel.STATE = "A";
+                    mapModel.USER_ID = userId;
+                    mapModel.CP_FIRST_ID = pathId;
+                    mapModel.TIMESTAMP_INT = timestamp;
+                    db.Insertable(mapModel).ExecuteCommand();
+                }
+
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = timestamp;
+                jsonModel.status = 1;
+                jsonModel.msg = "应用成功";
+
+                db.Ado.CommitTran();
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                db.Ado.RollbackTran();
                 throw ex;
             }
         }

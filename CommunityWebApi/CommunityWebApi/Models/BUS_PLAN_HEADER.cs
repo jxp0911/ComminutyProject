@@ -52,7 +52,7 @@ namespace Entitys
 
         private System.Int32 _STATUS;
         /// <summary>
-        /// 0:报废;1:已完成;2:使用中;
+        /// 0:未完成;1:已完成
         /// </summary>
         public System.Int32 STATUS { get { return this._STATUS; } set { this._STATUS = value; } }
 

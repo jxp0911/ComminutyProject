@@ -193,5 +193,30 @@ namespace CommunityWebApi.Controllers
             }
         }
 
+        [Route("bus/plan/useplan")]
+        [HttpPost]
+        public IHttpActionResult UserOtherPlan([FromBody]dynamic value)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                string UserId = Convert.ToString(value.user_id);
+                string PlanId = Convert.ToString(value.plan_id);
+                string PathId = Convert.ToString(value.path_id);
+                PlanDomain PD = new PlanDomain();
+                result = PD.UserOtherPlan(UserId, PlanId, PathId);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Plan", "UserOtherPlan", "bus/plan/useplan", "应用计划接口", Convert.ToString(value), ex.Message.ToString(), "POST");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "请求失败，请重试";
+                return Json(result);
+            }
+        }
     }
 }
