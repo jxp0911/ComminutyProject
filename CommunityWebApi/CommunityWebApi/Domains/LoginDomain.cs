@@ -167,9 +167,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-
                 //返给前台的JSON实体
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();
@@ -207,9 +204,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-
                 //返给前台的JSON实体
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();

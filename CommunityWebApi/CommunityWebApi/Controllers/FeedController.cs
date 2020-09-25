@@ -1,6 +1,7 @@
 ﻿using CommunityWebApi.Common;
 using CommunityWebApi.Domains;
 using CommunityWebApi.Models;
+using CommunityWebApi.RealizeInterface;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,16 @@ namespace CommunityWebApi.Controllers
             try
             {
                 string UserId = Convert.ToString(value.user_id);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+
                 FeedPathFirstModel feedModel = JsonConvert.DeserializeObject<FeedPathFirstModel>(Convert.ToString(value.feed_info));
+                if (!string.IsNullOrEmpty(feedModel.TOPIC_ID))
+                    VD.Run(feedModel.TOPIC_ID, new VerifyTopic());
+                if (!string.IsNullOrEmpty(feedModel.FAQ_ID))
+                    VD.Run(feedModel.FAQ_ID, new VerifyFaq());
+
                 FeedDomain FD = new FeedDomain();
                 result = FD.PostPath(UserId, feedModel);
                 return Json(result);
@@ -45,6 +55,15 @@ namespace CommunityWebApi.Controllers
             RetJsonModel result = new RetJsonModel();
             try
             {
+                //数据校验
+                RunVerify VD = new RunVerify();
+                if (!string.IsNullOrEmpty(uid))
+                    VD.Run(uid, new VerifyUser());
+                if (!string.IsNullOrEmpty(topic_id))
+                    VD.Run(uid, new VerifyTopic());
+                if (!string.IsNullOrEmpty(faq_id))
+                    VD.Run(uid, new VerifyFaq());
+
                 FeedDomain FD = new FeedDomain();
                 result = FD.GetFeedPath(uid, cursor, count, status, topic_id, faq_id, is_own);
                 return Json(result);
@@ -70,10 +89,14 @@ namespace CommunityWebApi.Controllers
             try
             {
                 int isPass = Convert.ToInt32(value.is_pass);
-                string userId = Convert.ToString(value.user_id);
+                string UserId = Convert.ToString(value.user_id);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+
                 List<string> firstId = JsonConvert.DeserializeObject<List<string>>(Convert.ToString(value.first_id));
                 FeedDomain FD = new FeedDomain();
-                result = FD.AuditPath(firstId, isPass, userId);
+                result = FD.AuditPath(firstId, isPass, UserId);
                 return Json(result);
             }
             catch (Exception ex)
@@ -97,6 +120,12 @@ namespace CommunityWebApi.Controllers
             RetJsonModel result = new RetJsonModel();
             try
             {
+                //数据校验
+                RunVerify VD = new RunVerify();
+                if (!string.IsNullOrEmpty(user_id))
+                    VD.Run(user_id, new VerifyUser());
+                VD.Run(path_id, new VerifyFirstPath());
+
                 FeedDomain FD = new FeedDomain();
                 result = FD.GetPathDetailedInfo(user_id, path_id);
                 return Json(result);
@@ -126,6 +155,10 @@ namespace CommunityWebApi.Controllers
                 string pathId = Convert.ToString(value.path_id);
                 string content = Convert.ToString(value.content);
                 int pathClass = Convert.ToInt32(value.path_class);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(userId, new VerifyUser());
+                VD.Run(pathId, InterfaceArray.DicVD[pathClass]);
 
                 FeedDomain FD = new FeedDomain();
                 result = FD.ModifyPath(userId, pathId, pathClass, content);
@@ -151,6 +184,11 @@ namespace CommunityWebApi.Controllers
             RetJsonModel result = new RetJsonModel();
             try
             {
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(user_id, new VerifyUser());
+                VD.Run(path_id, InterfaceArray.DicVD[path_class]);
+
                 FeedDomain FD = new FeedDomain();
                 result = FD.GetHistortModify(user_id, path_id, path_class, cursor, count);
                 return Json(result);
@@ -176,6 +214,11 @@ namespace CommunityWebApi.Controllers
             RetJsonModel result = new RetJsonModel();
             try
             {
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(user_id, new VerifyUser());
+                VD.Run(modify_id, new VerifyModifyPath());
+
                 FeedDomain FD = new FeedDomain();
                 result = FD.GetModifyDetailedInfo(user_id, modify_id);
                 return Json(result);
@@ -227,6 +270,10 @@ namespace CommunityWebApi.Controllers
                 string UserId = Convert.ToString(value.user_id);
                 string Desc = Convert.ToString(value.desc);
                 string TopicName = Convert.ToString(value.topic_name);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+
                 FeedDomain FD = new FeedDomain();
                 result = FD.PublishQues(UserId, Desc, TopicName);
                 return Json(result);
@@ -250,6 +297,10 @@ namespace CommunityWebApi.Controllers
             RetJsonModel result = new RetJsonModel();
             try
             {
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(topic_id, new VerifyTopic());
+
                 FeedDomain FD = new FeedDomain();
                 result = FD.GetTopicDtlById(user_id, topic_id);
                 return Json(result);
@@ -272,6 +323,11 @@ namespace CommunityWebApi.Controllers
             RetJsonModel result = new RetJsonModel();
             try
             {
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(user_id, new VerifyUser());
+                VD.Run(faq_id, new VerifyFaq());
+
                 FeedDomain FD = new FeedDomain();
                 result = FD.GetFaqDtlById(user_id, faq_id);
                 return Json(result);
@@ -298,6 +354,14 @@ namespace CommunityWebApi.Controllers
                 string ContentId = Convert.ToString(value.content_id);
                 string ToSharedId = Convert.ToString(value.to_shared_id);
                 int ShareType = Convert.ToInt32(value.share_type);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                if (ShareType == 1)
+                {
+                    VD.Run(ContentId, new VerifyFirstPath());
+                    VD.Run(ToSharedId, new VerifyFaq());
+                }
 
                 FeedDomain FD = new FeedDomain();
                 result = FD.ShareContent(UserId, ContentId, ToSharedId, ShareType);

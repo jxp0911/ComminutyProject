@@ -24,10 +24,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, firstId, "FIRST_PATH");
-
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -68,46 +64,6 @@ namespace CommunityWebApi.Domains
         }
 
         /// <summary>
-        /// 获取用户关注的所有职业路径信息
-        /// </summary>
-        /// <param name="userId">用户ID</param>
-        /// <param name="cursor">已经返回的数据条数</param>
-        /// <param name="count">前台需要的数据条数</param>
-        /// <returns></returns>
-        public RetJsonModel GetUserFocus(string userId,int cursor, int count)
-        {
-            var db = DBContext.GetInstance;
-            try
-            {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-
-                DateTime now = db.GetDate();
-                int timestamp = FunctionHelper.GetTimestamp();
-
-                RetJsonModel jsonModel = new RetJsonModel();
-                jsonModel.time = timestamp;
-
-                var fIdList = db.Queryable<MAP_USER_CARREERPATH>()
-                        .Where(x => x.USER_ID == userId && x.STATE == "A")
-                        .Select(x => x.CP_FIRST_ID).ToList();
-                FeedDomain FD = new FeedDomain();
-                List<FeedFirstReturnModel> data = FD.GetFeedInfo(db, userId, cursor, count, 1, fIdList);
-
-                jsonModel.status = 1;
-                jsonModel.msg = "成功";
-                jsonModel.data = data;
-
-                return jsonModel;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-
-        /// <summary>
         /// 发表对职业路线的评论
         /// </summary>
         /// <param name="userId">用户ID</param>
@@ -119,10 +75,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, pathId, FunctionHelper.GetDescByCode(pathType));
-
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -166,15 +118,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, toUid, "USER_ID");
-                FunctionHelper.VerifyInfo(db, commentId, "COMMENT");
-                if(commentId != replyId)
-                {
-                    FunctionHelper.VerifyInfo(db, replyId, "REPLY");
-                }
-
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -218,10 +161,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, typeId, FunctionHelper.GetDescByCode(favourType));
-
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -230,10 +169,8 @@ namespace CommunityWebApi.Domains
 
                 db.Ado.BeginTran();
 
-                RunFunction RF = new RunFunction();
-                IGiveFavour GFClass = InterfaceArray.DicGF[favourType];
-
-                RF.RunFavour(db, userId, typeId, favourType, now, timestamp, GFClass);
+                RunFavour RF = new RunFavour(favourType);
+                RF.Run(db, userId, typeId, favourType, now, timestamp);
 
                 db.Ado.CommitTran();
 
@@ -266,9 +203,6 @@ namespace CommunityWebApi.Domains
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
 
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, modifyId, "MODIFY");
                 int count = db.Queryable<BUS_MODIFIED_VOTE>()
                     .Where(x => x.USER_ID == userId && x.MODIFY_PATH_ID == modifyId && x.STATE == "A")
                     .Count();
@@ -336,9 +270,6 @@ namespace CommunityWebApi.Domains
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
 
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, modifyId, "MODIFY");
                 int isReviewer = db.Queryable<BUS_PATH_REVIEWER>()
                     .Where(x => x.USER_ID == userId && x.MODIFY_PATH_ID == modifyId && x.STATE == "A")
                     .Count();

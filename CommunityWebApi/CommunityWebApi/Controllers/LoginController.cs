@@ -1,6 +1,7 @@
 ﻿using CommunityWebApi.Common;
 using CommunityWebApi.Domains;
 using CommunityWebApi.Models;
+using CommunityWebApi.RealizeInterface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -86,6 +87,10 @@ namespace CommunityWebApi.Controllers
             try
             {
                 string UserId = Convert.ToString(value.user_id);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+
                 LoginDomain LD = new LoginDomain();
                 result = LD.IsLogin(UserId);
                 return Json(result);
@@ -117,6 +122,10 @@ namespace CommunityWebApi.Controllers
             try
             {
                 LoginDomain LD = new LoginDomain();
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+
                 result = LD.GetRolePermission(user_id);
                 return Json(result);
             }

@@ -1,6 +1,8 @@
 ﻿using CommunityWebApi.Common;
 using CommunityWebApi.Domains;
+using CommunityWebApi.Interface;
 using CommunityWebApi.Models;
+using CommunityWebApi.RealizeInterface;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -27,6 +29,11 @@ namespace CommunityWebApi.Controllers
             {
                 string UserId = Convert.ToString(value.user_id);
                 string FirstId = Convert.ToString(value.first_id);
+                
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(FirstId, new VerifyFirstPath());
+
                 UserDomain UD = new UserDomain();
                 result = UD.FollowCareerPath(UserId, FirstId);
                 return Json(result);
@@ -59,6 +66,10 @@ namespace CommunityWebApi.Controllers
                 string pathId = Convert.ToString(value.path_id);
                 string content = Convert.ToString(value.content);
                 int pathType = Convert.ToInt32(value.path_type);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(pathId, InterfaceArray.DicVD[pathType]);
 
                 UserDomain UD = new UserDomain();
                 result = UD.PublishComment(UserId, pathId, content, pathType);
@@ -94,6 +105,15 @@ namespace CommunityWebApi.Controllers
                 string content = Convert.ToString(value.content);
                 string toUid = Convert.ToString(value.to_uid);
 
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(toUid, new VerifyUser());
+                VD.Run(commentId, new VerifyComment());
+                if (commentId != replyId)
+                    VD.Run(replyId, new VerifyReply());
+
+                //执行业务
                 UserDomain UD = new UserDomain();
                 result = UD.PublishReply(UserId, commentId, replyId, content, toUid);
                 return Json(result);
@@ -123,11 +143,15 @@ namespace CommunityWebApi.Controllers
             try
             {
                 string UserId = Convert.ToString(value.user_id);
-                string typeId = Convert.ToString(value.type_id);
+                string TypeId = Convert.ToString(value.type_id);
                 int favourType = Convert.ToInt32(value.favour_type);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(TypeId, InterfaceArray.DicVD[favourType]);
 
                 UserDomain UD = new UserDomain();
-                result = UD.Favour(UserId, typeId, favourType);
+                result = UD.Favour(UserId, TypeId, favourType);
                 return Json(result);
             }
             catch (Exception ex)
@@ -157,6 +181,10 @@ namespace CommunityWebApi.Controllers
                 string UserId = Convert.ToString(value.user_id);
                 string modifyId = Convert.ToString(value.modify_id);
                 int isSupport = Convert.ToInt32(value.is_support);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(modifyId, new VerifyModifyPath());
 
                 UserDomain UD = new UserDomain();
                 result = UD.NormalVote(UserId, modifyId, isSupport);
@@ -189,6 +217,10 @@ namespace CommunityWebApi.Controllers
                 string UserId = Convert.ToString(value.user_id);
                 string modifyId = Convert.ToString(value.modify_id);
                 int isSupport = Convert.ToInt32(value.is_support);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(modifyId, new VerifyModifyPath());
 
                 UserDomain UD = new UserDomain();
                 result = UD.ReviewerVote(UserId, modifyId, isSupport);

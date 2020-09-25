@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CommunityWebApi.Interface
 {
-    interface IVerifyData
+    public interface IVerifyData
     {
         bool Verify(string info);
     }

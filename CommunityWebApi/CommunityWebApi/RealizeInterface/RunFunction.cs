@@ -1,4 +1,5 @@
-﻿using CommunityWebApi.Interface;
+﻿using CommunityWebApi.Common;
+using CommunityWebApi.Interface;
 using Entitys;
 using SqlSugar;
 using System;
@@ -8,8 +9,39 @@ using System.Web;
 
 namespace CommunityWebApi.RealizeInterface
 {
-    public class RunFunction
+    /// <summary>
+    /// 数据校验ID是否存在
+    /// </summary>
+    public class RunVerify
     {
+        public void Run(string id, IVerifyData arg)
+        {
+            try
+            {
+                arg.Verify(id);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 点赞通用类
+    /// </summary>
+    public class RunFavour
+    {
+        IGiveFavour GF { get; }
+
+        /// <summary>
+        /// 初始化时把更新的表类型传进来
+        /// </summary>
+        /// <param name="type"></param>
+        public RunFavour(int type)
+        {
+            GF = InterfaceArray.DicGF[type];
+        }
         /// <summary>
         /// 点赞通用方法
         /// </summary>
@@ -20,7 +52,7 @@ namespace CommunityWebApi.RealizeInterface
         /// <param name="now"></param>
         /// <param name="timestamp"></param>
         /// <param name="arg">接口的实现类</param>
-        public void RunFavour(SqlSugarClient db, string userId, string typeId, int favourType, DateTime now,int timestamp, IGiveFavour arg)
+        public void Run(SqlSugarClient db, string userId, string typeId, int favourType, DateTime now,int timestamp)
         {
             var count = db.Queryable<BUS_USER_FAVOUR>()
                     .Where(x => x.USER_ID == userId && x.TYPE_ID == typeId && x.TYPE == favourType && x.STATE == "A")
@@ -47,7 +79,7 @@ namespace CommunityWebApi.RealizeInterface
                 favourCount = 1;
             }
             //修改相应业务表的点赞数量
-            arg.UpdateCount(db, typeId, favourCount, now);
+            GF.UpdateCount(db, typeId, favourCount, now);
         }
     }
 }

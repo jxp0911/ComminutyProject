@@ -27,13 +27,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                if(!string.IsNullOrEmpty(feedModel.TOPIC_ID))
-                    FunctionHelper.VerifyInfo(db, feedModel.TOPIC_ID, "TOPIC");
-                if (!string.IsNullOrEmpty(feedModel.FAQ_ID))
-                    FunctionHelper.VerifyInfo(db, feedModel.FAQ_ID, "FAQ");
-
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
                 RetJsonModel jsonModel = new RetJsonModel();
@@ -144,13 +137,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                if (!string.IsNullOrEmpty(userId))
-                    FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                if (!string.IsNullOrEmpty(topicId))
-                    FunctionHelper.VerifyInfo(db, topicId, "TOPIC");
-                if (!string.IsNullOrEmpty(faqId))
-                    FunctionHelper.VerifyInfo(db, faqId, "FAQ");
-
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();
 
@@ -243,9 +229,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-
                 DateTime now = db.GetDate();
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();
@@ -303,13 +286,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                if (!string.IsNullOrEmpty(userId))
-                {
-                    FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                }
-                FunctionHelper.VerifyInfo(db, pathId, "ANY_PATH");
-
                 DateTime now = db.GetDate();
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = FunctionHelper.GetTimestamp();
@@ -388,8 +364,6 @@ namespace CommunityWebApi.Domains
                 jsonModel.time = timestamp;
 
                 //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, pathId, FunctionHelper.GetDescByCode(pathClass));
                 int count = db.Queryable<BUS_MODIFY_PATH>()
                     .Where(x => x.PATH_ID == pathId && x.PATH_CLASS == pathClass && x.STATE == "A" && x.IS_MERGE == "N")
                     .Count();
@@ -451,14 +425,9 @@ namespace CommunityWebApi.Domains
             try
             {
                 var db = DBContext.GetInstance;
-                DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
-
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, pathId, FunctionHelper.GetDescByCode(pathClass));
 
                 List<ModifyPathModel> modifyList = GetModifyInfo(userId, pathId, pathClass, cursor, count, true, out bool hasMore);
 
@@ -1032,8 +1001,6 @@ namespace CommunityWebApi.Domains
             try
             {
                 DateTime now = db.GetDate();
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
                 int timestamp = FunctionHelper.GetTimestamp();
 
                 var count = db.Queryable<BUS_TOPICS>()
@@ -1165,10 +1132,6 @@ namespace CommunityWebApi.Domains
             try
             {
                 var db = DBContext.GetInstance;
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, topicId, "TOPIC");
-
                 int timestamp = FunctionHelper.GetTimestamp();
                 var data = db.Queryable<BUS_TOPICS>()
                     .Where(x => x.ID == topicId && x.STATUS == 1 && x.STATE == "A")
@@ -1208,14 +1171,6 @@ namespace CommunityWebApi.Domains
             try
             {
                 DateTime now = db.GetDate();
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                if (shareType == 1)
-                {
-                    FunctionHelper.VerifyInfo(db, contentId, "FIRST_PATH");
-                    FunctionHelper.VerifyInfo(db, toSharedId, "FAQ");
-                }
-
                 int timestamp = FunctionHelper.GetTimestamp();
 
                 db.Ado.BeginTran();
@@ -1297,10 +1252,6 @@ namespace CommunityWebApi.Domains
             try
             {
                 var db = DBContext.GetInstance;
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, faqId, "FAQ");
-
                 int timestamp = FunctionHelper.GetTimestamp();
                 var data = db.Queryable<BUS_FAQS, SYS_USER_INFO>((a, b) => new object[]{
                     JoinType.Inner,a.USER_ID==b.USER_ID&&a.STATE==b.STATE
