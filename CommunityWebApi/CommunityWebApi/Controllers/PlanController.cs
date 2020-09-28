@@ -1,6 +1,7 @@
 ﻿using CommunityWebApi.Common;
 using CommunityWebApi.Domains;
 using CommunityWebApi.Models;
+using CommunityWebApi.RealizeInterface;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -22,7 +23,12 @@ namespace CommunityWebApi.Controllers
             {
                 string UserId = Convert.ToString(value.user_id);
                 int IsShare = Convert.ToInt32(value.is_share);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
                 PlanHeaderModel planModel = JsonConvert.DeserializeObject<PlanHeaderModel>(Convert.ToString(value.plan_info));
+                VD.Run(planModel.FIRST_PATH_ID, new VerifyFirstPath());
+
                 PlanDomain PD = new PlanDomain();
                 result = PD.PostPlan(UserId, IsShare, planModel);
                 return Json(result);
@@ -48,6 +54,11 @@ namespace CommunityWebApi.Controllers
             {
                 string UserId = Convert.ToString(value.user_id);
                 string PlanId = Convert.ToString(value.plan_id);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(PlanId, new VerifyPlanHead());
+
                 PlanDomain PD = new PlanDomain();
                 result = PD.SharePlan(UserId, PlanId);
                 return Json(result);
@@ -73,6 +84,11 @@ namespace CommunityWebApi.Controllers
             {
                 string UserId = Convert.ToString(value.user_id);
                 string PlanId = Convert.ToString(value.plan_id);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(PlanId, new VerifyPlanHead());
+
                 PlanDomain PD = new PlanDomain();
                 result = PD.SharePlanCancel(UserId, PlanId);
                 return Json(result);
@@ -98,11 +114,20 @@ namespace CommunityWebApi.Controllers
             {
                 string UserId = Convert.ToString(value.user_id);
                 int IsShare = Convert.ToInt32(value.is_share);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
                 PlanHeaderModel planModel = JsonConvert.DeserializeObject<PlanHeaderModel>(Convert.ToString(value.plan_info));
                 if (planModel.PLAN_DTL == null)
                 {
                     throw new Exception("前台传的计划明细为空");
                 }
+                VD.Run(planModel.ID, new VerifyPlanHead());
+                foreach (var item in planModel.PLAN_DTL.Where(x => !string.IsNullOrEmpty(x.PLAN_DTL_ID)).ToList())
+                {
+                    VD.Run(item.PLAN_DTL_ID, new VerifyPlanDetail());
+                }
+
                 PlanDomain PD = new PlanDomain();
                 result = PD.UpdatePlan(UserId, IsShare, planModel);
                 return Json(result);
@@ -128,6 +153,11 @@ namespace CommunityWebApi.Controllers
             {
                 string UserId = Convert.ToString(value.user_id);
                 string PlanId = Convert.ToString(value.plan_id);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(PlanId, new VerifyPlanHead());
+
                 PlanDomain PD = new PlanDomain();
                 result = PD.DeletePlan(UserId, PlanId);
                 return Json(result);
@@ -154,6 +184,12 @@ namespace CommunityWebApi.Controllers
                 string UserId = Convert.ToString(value.user_id);
                 string PlanId = Convert.ToString(value.plan_id);
                 string PlanDtlId = Convert.ToString(value.plan_dtl_id);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(PlanId, new VerifyPlanHead());
+                VD.Run(PlanDtlId, new VerifyPlanDetail());
+
                 PlanDomain PD = new PlanDomain();
                 result = PD.UpdateStatus(UserId, PlanId, PlanDtlId);
                 return Json(result);
@@ -177,6 +213,11 @@ namespace CommunityWebApi.Controllers
             RetJsonModel result = new RetJsonModel();
             try
             {
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(user_id, new VerifyUser());
+                VD.Run(path_id, new VerifyFirstPath());
+
                 PlanDomain PD = new PlanDomain();
                 result = PD.GetPlanByPath(user_id, path_id, cursor, count);
                 return Json(result);
@@ -203,6 +244,12 @@ namespace CommunityWebApi.Controllers
                 string UserId = Convert.ToString(value.user_id);
                 string PlanId = Convert.ToString(value.plan_id);
                 string PathId = Convert.ToString(value.path_id);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+                VD.Run(PathId, new VerifyFirstPath());
+                VD.Run(PlanId, new VerifyPlanHead());
+
                 PlanDomain PD = new PlanDomain();
                 result = PD.UserOtherPlan(UserId, PlanId, PathId);
                 return Json(result);

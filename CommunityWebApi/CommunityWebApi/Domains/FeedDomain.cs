@@ -155,7 +155,7 @@ namespace CommunityWebApi.Domains
                         return jsonModel;
                     }
                 }
-                List<FeedFirstReturnModel> path_list = GetFeedInfo(db, userId, cursor, count, status, fIdList, topicId, faqId);
+                List<FeedFirstReturnModel> path_list = GetFeedInfo(db, userId, cursor, count, status, isOwn, fIdList, topicId, faqId);
                 //判断是否还有更多职业规划
                 var pathCount = db.Queryable<BUS_CAREERPATH_FIRST>()
                     .Where(x => x.STATUS == status && x.STATE == "A")
@@ -294,7 +294,7 @@ namespace CommunityWebApi.Domains
                 List<string> IdList = new List<string>();
                 IdList.Add(pathId);
                 //查询职业规划信息
-                FeedFirstReturnModel pathInfo = GetFeedInfo(db, userId, 0, 1, 1, IdList).FirstOrDefault();
+                FeedFirstReturnModel pathInfo = GetFeedInfo(db, userId, 0, 1, 1, false, IdList).FirstOrDefault();
                 //查询一级职业规划的所有评论
                 bool hasMore = false;
                 pathInfo.CommentInfo = new
@@ -579,7 +579,7 @@ namespace CommunityWebApi.Domains
         /// <param name="status">前台需要的数据状态（1：审核通过；2：待审核）</param>
         /// <param name="firstIdList">职业路径一级ID集合</param>
         /// <returns></returns>
-        public List<FeedFirstReturnModel> GetFeedInfo(SqlSugarClient db, string userId, int cursor, int count, int status, List<string> firstIdList = null,string topicId = "",string faqId = "")
+        public List<FeedFirstReturnModel> GetFeedInfo(SqlSugarClient db, string userId, int cursor, int count, int status, bool isOwn, List<string> firstIdList = null,string topicId = "",string faqId = "")
         {
             try
             {
@@ -677,7 +677,7 @@ namespace CommunityWebApi.Domains
                         NICK_NAME = b.NICK_NAME
                     }).ToList();
 
-                    item.PlanList = GetPlan(db, item.ID);
+                    item.PlanList = GetPlan(db, item.ID, isOwn);
 
                     foreach (var it in item.SecondList)
                     {
@@ -1291,7 +1291,7 @@ namespace CommunityWebApi.Domains
             }
         }
 
-        public List<PlanHeaderReturnModel> GetPlan(SqlSugarClient db,string pathId)
+        public List<PlanHeaderReturnModel> GetPlan(SqlSugarClient db,string pathId,bool isOwn)
         {
             try
             {
@@ -1299,6 +1299,7 @@ namespace CommunityWebApi.Domains
                     JoinType.Left,a.USER_ID==b.USER_ID&&a.STATE==b.STATE,
                     JoinType.Left,a.SOURCE_USER_ID==c.USER_ID&&a.STATE==c.STATE
                 }).Where((a, b, c) => a.FIRST_PATH_ID == pathId && a.STATE == "A")
+                .WhereIF(isOwn == false, (a, b, c) => a.IS_SHARED == 1)
                 .OrderBy((a, b, c) => a.FAVOUR_COUNT, OrderByType.Desc)
                 .Select((a, b, c) => new PlanHeaderReturnModel
                 {
@@ -1314,10 +1315,11 @@ namespace CommunityWebApi.Domains
                     SOURCE_USER_ID = a.SOURCE_USER_ID,
                     SOURCE_NICK_NAME = c.NICK_NAME
                 }).ToList();
+                int visible = isOwn ? 2 : 1;
                 foreach(var item in data)
                 {
                     var dtl = db.Queryable<BUS_PLAN_DETAIL>()
-                        .Where(x => x.HEADER_ID == item.PLAN_ID && x.STATE == "A" && x.VISIBLE_TYPE == 1)
+                        .Where(x => x.HEADER_ID == item.PLAN_ID && x.STATE == "A" && x.VISIBLE_TYPE == visible)
                         .OrderBy(x => x.SEQ, OrderByType.Asc)
                         .Select(x => new PlanDetailReturnModel
                         {

@@ -25,9 +25,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, planModel.FIRST_PATH_ID, "FIRST_PATH");
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -111,9 +108,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, planId, "PLAN");
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -150,9 +144,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, planId, "PLAN");
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -205,13 +196,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, planModel.ID, "PLAN_HRAD");
-                foreach(var item in planModel.PLAN_DTL.Where(x=>!string.IsNullOrEmpty(x.PLAN_DTL_ID)).ToList())
-                {
-                    FunctionHelper.VerifyInfo(db, item.PLAN_DTL_ID, "PLAN_DTL");
-                }
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -331,9 +315,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, planId, "PLAN_HRAD");
                 int timestamp = FunctionHelper.GetTimestamp();
 
                 db.Ado.BeginTran();
@@ -373,10 +354,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, planId, "PLAN_HEAD");
-                FunctionHelper.VerifyInfo(db, planDtlId, "PLAN_DTL");
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 
@@ -433,9 +410,6 @@ namespace CommunityWebApi.Domains
             try
             {
                 var db = DBContext.GetInstance;
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, pathId, "FIRST_PATH");
                 int timestamp = FunctionHelper.GetTimestamp();
 
                 var data = db.Queryable<BUS_PLAN_HEADER, SYS_USER_INFO, SYS_USER_INFO>((a, b, c) => new object[]

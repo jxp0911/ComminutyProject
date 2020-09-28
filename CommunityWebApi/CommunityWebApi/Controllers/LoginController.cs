@@ -124,7 +124,7 @@ namespace CommunityWebApi.Controllers
                 LoginDomain LD = new LoginDomain();
                 //数据校验
                 RunVerify VD = new RunVerify();
-                VD.Run(UserId, new VerifyUser());
+                VD.Run(user_id, new VerifyUser());
 
                 result = LD.GetRolePermission(user_id);
                 return Json(result);

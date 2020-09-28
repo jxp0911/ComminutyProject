@@ -299,6 +299,8 @@ namespace CommunityWebApi.Controllers
             {
                 //数据校验
                 RunVerify VD = new RunVerify();
+                if(!string.IsNullOrEmpty(user_id))
+                    VD.Run(user_id, new VerifyUser());
                 VD.Run(topic_id, new VerifyTopic());
 
                 FeedDomain FD = new FeedDomain();
