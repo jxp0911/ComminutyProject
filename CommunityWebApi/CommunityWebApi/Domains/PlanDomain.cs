@@ -502,13 +502,6 @@ namespace CommunityWebApi.Domains
                     SHARED_COUNT = x.SHARED_COUNT + 1
                 }).Where(x => x.ID == planId && x.IS_SHARED == 1 && x.STATE == "A").ExecuteCommand();
 
-                //删除仅自己可见的原计划
-                var oldplanId = db.Queryable<BUS_PLAN_HEADER>()
-                    .Where(x => x.USER_ID == userId && x.FIRST_PATH_ID == pathId && x.STATE == "A")
-                    .Select(x => x.ID).First();
-                db.Deleteable<BUS_PLAN_HEADER>().Where(x => x.ID == planId && x.STATE == "A").ExecuteCommand();
-                db.Deleteable<BUS_PLAN_DETAIL>().Where(x => x.HEADER_ID == planId && x.VISIBLE_TYPE == 1 && x.STATE == "A").ExecuteCommand();
-
                 //插入新应用人的计划头表
                 var otherplan = db.Queryable<BUS_PLAN_HEADER>()
                     .Where(x => x.ID == planId && x.STATE == "A" && x.IS_SHARED == 1)
@@ -529,6 +522,13 @@ namespace CommunityWebApi.Domains
                 otherplan.ID = Guid.NewGuid().ToString();
                 otherplan.DATETIME_CREATED = now;
                 db.Insertable(otherplan).ExecuteCommand();
+
+                //删除仅自己可见的原计划
+                var oldplanId = db.Queryable<BUS_PLAN_HEADER>()
+                    .Where(x => x.USER_ID == userId && x.FIRST_PATH_ID == pathId && x.STATE == "A")
+                    .Select(x => x.ID).First();
+                db.Deleteable<BUS_PLAN_HEADER>().Where(x => x.ID == planId && x.STATE == "A").ExecuteCommand();
+                db.Deleteable<BUS_PLAN_DETAIL>().Where(x => x.HEADER_ID == planId && x.VISIBLE_TYPE == 1 && x.STATE == "A").ExecuteCommand();
 
                 //插入新应用人的计划明细表
                 var otherplandtl = db.Queryable<BUS_PLAN_DETAIL>()
