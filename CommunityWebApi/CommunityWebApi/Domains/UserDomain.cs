@@ -373,5 +373,48 @@ namespace CommunityWebApi.Domains
                 throw ex;
             }
         }
+
+        /// <summary>
+        /// 修改用户信息
+        /// </summary>昵称
+        /// <param name="userId"></param>
+        /// <param name="nickName"></param>
+        /// <returns></returns>
+        public RetJsonModel ChangeNickName(string userId,string nickName)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+                DateTime now = db.GetDate();
+                int timestamp = FunctionHelper.GetTimestamp();
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = timestamp;
+
+                var count = db.Queryable<SYS_USER_INFO>()
+                    .Where(x => x.NICK_NAME== nickName && x.USER_ID != userId && x.STATE == "A")
+                    .Count();
+                if (count > 0)
+                {
+                    jsonModel.msg = "昵称已存在";
+                }
+                else
+                {
+                    db.Updateable<SYS_USER_INFO>().SetColumns(x => new SYS_USER_INFO
+                    {
+                        NICK_NAME = nickName,
+                        DATETIME_MODIFIED = now
+                    }).Where(x => x.USER_ID == userId && x.STATE == "A").ExecuteCommand();
+
+                    jsonModel.status = 1;
+                    jsonModel.msg = "修改成功";
+                }
+
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }

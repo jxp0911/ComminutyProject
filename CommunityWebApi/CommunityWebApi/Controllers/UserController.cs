@@ -237,5 +237,39 @@ namespace CommunityWebApi.Controllers
                 return Json(result);
             }
         }
+
+        /// <summary>
+        /// 修改用户昵称
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        [Route("api/user/changename")]
+        [HttpPost]
+        public IHttpActionResult ChangeNickName([FromBody]dynamic value)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                string UserId = Convert.ToString(value.user_id);
+                string NickName = Convert.ToString(value.nick_name);
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(UserId, new VerifyUser());
+
+                UserDomain UD = new UserDomain();
+                result = UD.ChangeNickName(UserId, NickName);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("User", "ChangeNickName", "api/user/changename", "修改用户名", Convert.ToString(value), ex.Message.ToString(), "POST");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "失败,请重试";
+                return Json(result);
+            }
+        }
     }
 }

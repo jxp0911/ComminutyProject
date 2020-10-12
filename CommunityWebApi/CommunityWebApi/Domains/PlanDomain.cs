@@ -488,10 +488,6 @@ namespace CommunityWebApi.Domains
             var db = DBContext.GetInstance;
             try
             {
-                //数据校验
-                FunctionHelper.VerifyInfo(db, userId, "USER_ID");
-                FunctionHelper.VerifyInfo(db, planId, "PLAN_HEAD");
-                FunctionHelper.VerifyInfo(db, pathId, "FIRST_PATH");
                 DateTime now = db.GetDate();
                 int timestamp = FunctionHelper.GetTimestamp();
 

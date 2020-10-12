@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace CommunityWebApi.Interface
 {
-    public interface IVerifyData
+    public interface ITabDetail
     {
-        void Verify(string info);
+
     }
 }

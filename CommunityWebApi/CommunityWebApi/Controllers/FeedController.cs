@@ -65,13 +65,13 @@ namespace CommunityWebApi.Controllers
                     VD.Run(uid, new VerifyFaq());
 
                 FeedDomain FD = new FeedDomain();
-                result = FD.GetFeedPath(uid, cursor, count, status, topic_id, faq_id, is_own);
+                result = FD.GetSimpleFeed(uid, cursor, count, status, topic_id, faq_id, is_own);
                 return Json(result);
             }
             catch (Exception ex)
             {
                 //记录失败日志
-                FunctionHelper.SaveFailLog("Feed", "Get", "bus/feed/getfeed", "获取Feed信息", "用户ID：" + uid + "已经获取的卡片数量:" + cursor + ";本次请求的卡片数量:" + count + "请求的feed状态" + status, ex.Message.ToString(), "GET");
+                FunctionHelper.SaveFailLog("Feed", "Get", "bus/feed/getfeed", "获取Feed信息", "用户ID：" + uid + "已经获取的卡片数量:" + cursor + ";本次请求的卡片数量:" + count + "请求的feed状态" + status+"话题ID"+topic_id, ex.Message.ToString(), "GET");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
@@ -377,6 +377,33 @@ namespace CommunityWebApi.Controllers
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
                 result.msg = "提交失败，请重试";
+                return Json(result);
+            }
+        }
+
+        [Route("bus/feed/gettabs")]
+        [HttpGet]
+        public IHttpActionResult GetTabsInfo(string user_id)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(user_id, new VerifyUser());
+
+                FeedDomain FD = new FeedDomain();
+                result = FD.GetTabsInfo(user_id);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Feed", "GetTabsInfo", "bus/feed/gettabs", "下发用户个人页tab信息", $"用户ID：{user_id}", ex.Message.ToString(), "GET");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "数据异常，请重试";
                 return Json(result);
             }
         }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using CommunityWebApi.Common;
 using CommunityWebApi.Models;
+using CommunityWebApi.RealizeInterface;
 using Entitys;
 using Newtonsoft.Json;
 using SqlSugar;
@@ -1341,5 +1342,87 @@ namespace CommunityWebApi.Domains
                 throw ex;
             }
         }
+
+        /// <summary>
+        /// 简易feed
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="cursor"></param>
+        /// <param name="count"></param>
+        /// <param name="status"></param>
+        /// <param name="topicId"></param>
+        /// <param name="faqId"></param>
+        /// <param name="isOwn"></param>
+        /// <returns></returns>
+        public RetJsonModel GetSimpleFeed(string userId, int cursor, int count, int status, string topicId, string faqId, bool isOwn)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+                FeedClass FC = new FeedClass(topicId, faqId, status, isOwn, userId);
+                List<NewFeedFirstReturnModel> data = FC.GetFeedInfo(db, cursor, count);
+                bool has_more = FC.hasMore;
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = FunctionHelper.GetTimestamp();
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = new
+                {
+                    path_list=data,
+                    has_more
+                };
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        /// <summary>
+        /// 下发所有tab信息
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
+        public RetJsonModel GetTabsInfo(string userId)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+                //查询用户信息
+                var userInfo = db.Queryable<SYS_USER_INFO>()
+                    .Where(x => x.USER_ID == userId && x.STATE == "A")
+                    .Select(x => new UserInfoReturnModel
+                    {
+                        USER_ID = x.USER_ID,
+                        NiCK_NAME = x.NICK_NAME
+                    }).First();
+                //查询所有的tab
+                var tabInfo = db.Queryable<SYS_TABS_INFO>()
+                    .Where(x => x.STATE == "A")
+                    .OrderBy(x => x.SEQ, OrderByType.Asc)
+                    .Select(x => new TabDtlModel
+                    {
+                        CODE = x.TAB_CODE,
+                        NAME = x.TAB_NAME,
+                        SEQ = x.SEQ
+                    }).ToList();
+                TabsModel data = new TabsModel();
+                data.UserInfo = userInfo;
+                data.TabDtlList = tabInfo;
+
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = FunctionHelper.GetTimestamp();
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = data;
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex; 
+            }
+        }
+
     }
 }

@@ -495,4 +495,184 @@ namespace CommunityWebApi.Models
         [JsonProperty(PropertyName = "visible_type")]
         public int VISIBLE_TYPE { get; set; }
     }
+
+
+    //-------------新的feed结构-------------
+    [JsonObject(MemberSerialization.OptIn)]
+    public class NewFeedFirstReturnModel
+    {
+        //feed类型(1:所有三级职业规划；2:一、二级职业规划；3:一级职业规划；4:问答)
+        [JsonProperty(PropertyName = "type")]
+        public int Type { get; set; }
+        //一级标题
+        [JsonProperty(PropertyName = "title")]
+        public string TITLE { get; set; }
+        //创建时间
+        [JsonProperty(PropertyName = "datetime_created")]
+        public int TIMESTAMP { get; set; }
+        //一级职业路径ID
+        [JsonProperty(PropertyName = "id")]
+        public string ID { get; set; }
+        //用户信息
+        [JsonProperty(PropertyName = "user_info")]
+        public UserInfoReturnModel UserInfo { get; set; } = new UserInfoReturnModel();
+        //二级职业路径实体
+        [JsonProperty(PropertyName = "second_list")]
+        public List<NewFeedSecondReturnModel> SecondList { get; set; } = new List<NewFeedSecondReturnModel>();
+
+        public string _USER_ID = "";
+        //用户ID
+        public string USER_ID
+        {
+            get
+            {
+                return _USER_ID;
+            }
+            set
+            {
+                if (_USER_ID != value)
+                {
+                    _USER_ID = value;
+                    UserInfo.USER_ID = value;
+                }
+            }
+        }
+        private string _NICK_NAME = "";
+        //用户昵称
+        public string NICK_NAME
+        {
+            get
+            {
+                return _NICK_NAME;
+            }
+            set
+            {
+                if (_NICK_NAME != value)
+                {
+                    _NICK_NAME = value;
+                    UserInfo.NiCK_NAME = value;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// second级信息
+    /// </summary>
+    [JsonObject(MemberSerialization.OptIn)]
+    public class NewFeedSecondReturnModel
+    {
+        //二级职业路径ID
+        [JsonProperty(PropertyName = "id")]
+        public string ID { get; set; }
+        //二级标题内容
+        [JsonProperty(PropertyName = "title")]
+        public string TITLE { get; set; }
+        //创建时间
+        [JsonProperty(PropertyName = "datetime_created")]
+        public int TIMESTAMP { get; set; }
+        //用户信息
+        [JsonProperty(PropertyName = "user_info")]
+        public UserInfoReturnModel UserInfo { get; set; } = new UserInfoReturnModel();
+        //三级职业路径实体
+        [JsonProperty(PropertyName = "third_list")]
+        public List<NewFeedThirdReturnModel> ThirdList { get; set; } = new List<NewFeedThirdReturnModel>();
+
+        //一级职业路径ID
+        public string FIRST_ID { get; set; }
+
+        public string _USER_ID = "";
+        //用户ID
+        public string USER_ID
+        {
+            get
+            {
+                return _USER_ID;
+            }
+            set
+            {
+                if (_USER_ID != value)
+                {
+                    _USER_ID = value;
+                    UserInfo.USER_ID = value;
+                }
+            }
+        }
+        public string _NICK_NAME = "";
+        //用户昵称
+        public string NICK_NAME
+        {
+            get
+            {
+                return _NICK_NAME;
+            }
+            set
+            {
+                if (_NICK_NAME != value)
+                {
+                    _NICK_NAME = value;
+                    UserInfo.NiCK_NAME = value;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// third级信息
+    /// </summary>
+    [JsonObject(MemberSerialization.OptIn)]
+    public class NewFeedThirdReturnModel
+    {
+        //三级职业路径ID
+        [JsonProperty(PropertyName = "id")]
+        public string ID { get; set; }
+        //三级标题
+        [JsonProperty(PropertyName = "title")]
+        public string TITLE { get; set; }
+        //创建时间
+        [JsonProperty(PropertyName = "datetime_created")]
+        public int TIMESTAMP { get; set; }
+        //用户信息
+        [JsonProperty(PropertyName = "user_info")]
+        public UserInfoReturnModel UserInfo { get; set; } = new UserInfoReturnModel();
+
+        //一级职业路径ID
+        public string FIRST_ID { get; set; }
+        //二级职业路径ID
+        public string SECOND_ID { get; set; }
+        public string _USER_ID = "";
+        //用户ID
+        public string USER_ID
+        {
+            get
+            {
+                return _USER_ID;
+            }
+            set
+            {
+                if (_USER_ID != value)
+                {
+                    _USER_ID = value;
+                    UserInfo.USER_ID = value;
+                }
+            }
+        }
+        public string _NICK_NAME = "";
+        //用户昵称
+        public string NICK_NAME
+        {
+            get
+            {
+                return _NICK_NAME;
+            }
+            set
+            {
+                if (_NICK_NAME != value)
+                {
+                    _NICK_NAME = value;
+                    UserInfo.NiCK_NAME = value;
+                }
+            }
+        }
+    }
 }
