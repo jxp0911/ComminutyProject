@@ -554,6 +554,8 @@ namespace CommunityWebApi.Models
                 }
             }
         }
+
+        public string PLAN_ID { get; set; }
     }
 
     /// <summary>

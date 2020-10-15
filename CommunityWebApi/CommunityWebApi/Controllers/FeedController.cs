@@ -60,9 +60,9 @@ namespace CommunityWebApi.Controllers
                 if (!string.IsNullOrEmpty(uid))
                     VD.Run(uid, new VerifyUser());
                 if (!string.IsNullOrEmpty(topic_id))
-                    VD.Run(uid, new VerifyTopic());
+                    VD.Run(topic_id, new VerifyTopic());
                 if (!string.IsNullOrEmpty(faq_id))
-                    VD.Run(uid, new VerifyFaq());
+                    VD.Run(faq_id, new VerifyFaq());
 
                 FeedDomain FD = new FeedDomain();
                 result = FD.GetSimpleFeed(uid, cursor, count, status, topic_id, faq_id, is_own);
@@ -400,6 +400,33 @@ namespace CommunityWebApi.Controllers
             {
                 //记录失败日志
                 FunctionHelper.SaveFailLog("Feed", "GetTabsInfo", "bus/feed/gettabs", "下发用户个人页tab信息", $"用户ID：{user_id}", ex.Message.ToString(), "GET");
+
+                result.status = 0;
+                result.time = FunctionHelper.GetTimestamp();
+                result.msg = "数据异常，请重试";
+                return Json(result);
+            }
+        }
+
+        [Route("bus/feed/gettabdtl")]
+        [HttpGet]
+        public IHttpActionResult GetTabDtl(string user_id, int cursor, int count, int status, string code)
+        {
+            RetJsonModel result = new RetJsonModel();
+            try
+            {
+                //数据校验
+                RunVerify VD = new RunVerify();
+                VD.Run(user_id, new VerifyUser());
+
+                FeedDomain FD = new FeedDomain();
+                result = FD.GetTabDtl(user_id, cursor, count, status, code);
+                return Json(result);
+            }
+            catch (Exception ex)
+            {
+                //记录失败日志
+                FunctionHelper.SaveFailLog("Feed", "GetTabDtl", "bus/feed/gettabdtl", "下发用户个人页某个tab信息", $"用户ID：{user_id}；cursor：{cursor}；count：{count}；状态：{status}；tab编码：{code}", ex.Message.ToString(), "GET");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();

@@ -15,8 +15,8 @@ namespace CommunityWebApi.Interface
         string faqId { get; }
         int status { get; }
         bool isOwn { get; }
-        bool hasMore { get; }
+        bool hasMore { get; set; }
         List<NewFeedFirstReturnModel> GetFeedInfo(SqlSugarClient db, int cursor, int count);
-        void HasMore(SqlSugarClient db, int cursor, int count, int listCount);
+        void HasMore(SqlSugarClient db, int cursor, int listCount);
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using CommunityWebApi.Common;
+using CommunityWebApi.Interface;
 using CommunityWebApi.Models;
 using CommunityWebApi.RealizeInterface;
 using Entitys;
@@ -1359,7 +1360,7 @@ namespace CommunityWebApi.Domains
             try
             {
                 var db = DBContext.GetInstance;
-                FeedClass FC = new FeedClass(topicId, faqId, status, isOwn, userId);
+                FeedClass FC = new FeedClass(userId, status, isOwn, topicId, faqId);
                 List<NewFeedFirstReturnModel> data = FC.GetFeedInfo(db, cursor, count);
                 bool has_more = FC.hasMore;
                 RetJsonModel jsonModel = new RetJsonModel();
@@ -1421,6 +1422,44 @@ namespace CommunityWebApi.Domains
             catch (Exception ex)
             {
                 throw ex; 
+            }
+        }
+
+
+        public RetJsonModel GetTabDtl(string userId, int cursor, int count, int status, string code)
+        {
+            try
+            {
+                var db = DBContext.GetInstance;
+                IFeed ownfeed = null;
+                //个人关注页
+                if (code == "T01")
+                {
+                    ownfeed = new FeedClass(userId, status, true);
+                }
+                //个人发布页
+                if (code == "T02")
+                {
+                    ownfeed = new OwnFeedTab1Class(userId, status);
+                }
+                RunCard run = new RunCard();
+                List<NewFeedFirstReturnModel> list = run.Run(db, cursor, count, ownfeed);
+                bool has_more = run.HasMore;
+
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = FunctionHelper.GetTimestamp();
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = new
+                {
+                    card_list = list,
+                    has_more
+                };
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
         }
 

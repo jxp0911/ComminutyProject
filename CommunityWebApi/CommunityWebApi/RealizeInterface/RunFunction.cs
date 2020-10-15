@@ -1,5 +1,6 @@
 ﻿using CommunityWebApi.Common;
 using CommunityWebApi.Interface;
+using CommunityWebApi.Models;
 using Entitys;
 using SqlSugar;
 using System;
@@ -52,7 +53,7 @@ namespace CommunityWebApi.RealizeInterface
         /// <param name="now"></param>
         /// <param name="timestamp"></param>
         /// <param name="arg">接口的实现类</param>
-        public void Run(SqlSugarClient db, string userId, string typeId, int favourType, DateTime now,int timestamp)
+        public void Run(SqlSugarClient db, string userId, string typeId, int favourType, DateTime now, int timestamp)
         {
             var count = db.Queryable<BUS_USER_FAVOUR>()
                     .Where(x => x.USER_ID == userId && x.TYPE_ID == typeId && x.TYPE == favourType && x.STATE == "A")
@@ -80,6 +81,17 @@ namespace CommunityWebApi.RealizeInterface
             }
             //修改相应业务表的点赞数量
             GF.UpdateCount(db, typeId, favourCount, now);
+        }
+    }
+
+    public class RunCard
+    {
+        public bool HasMore { get; set; }
+        public List<NewFeedFirstReturnModel> Run(SqlSugarClient db, int cursor, int count, IFeed arg)
+        {
+            HasMore = arg.hasMore;
+            List<NewFeedFirstReturnModel> list = arg.GetFeedInfo(db, cursor, count);
+            return list;
         }
     }
 }
