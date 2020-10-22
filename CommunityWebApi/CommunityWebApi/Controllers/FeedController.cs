@@ -50,28 +50,28 @@ namespace CommunityWebApi.Controllers
 
         [Route("bus/feed/getfeed")]
         [HttpGet]
-        public IHttpActionResult Get(string uid,int cursor, int count,int status,string topic_id, string faq_id, bool is_own)
+        public IHttpActionResult Get(string user_id,int cursor, int count,int status,string topic_id, string faq_id, string code)
         {
             RetJsonModel result = new RetJsonModel();
             try
             {
                 //数据校验
                 RunVerify VD = new RunVerify();
-                if (!string.IsNullOrEmpty(uid))
-                    VD.Run(uid, new VerifyUser());
+                if (!string.IsNullOrEmpty(user_id))
+                    VD.Run(user_id, new VerifyUser());
                 if (!string.IsNullOrEmpty(topic_id))
                     VD.Run(topic_id, new VerifyTopic());
                 if (!string.IsNullOrEmpty(faq_id))
                     VD.Run(faq_id, new VerifyFaq());
 
                 FeedDomain FD = new FeedDomain();
-                result = FD.GetSimpleFeed(uid, cursor, count, status, topic_id, faq_id, is_own);
+                result = FD.GetCardInfo(user_id, cursor, count, status, topic_id, faq_id, code);
                 return Json(result);
             }
             catch (Exception ex)
             {
                 //记录失败日志
-                FunctionHelper.SaveFailLog("Feed", "Get", "bus/feed/getfeed", "获取Feed信息", "用户ID：" + uid + "已经获取的卡片数量:" + cursor + ";本次请求的卡片数量:" + count + "请求的feed状态" + status+"话题ID"+topic_id, ex.Message.ToString(), "GET");
+                FunctionHelper.SaveFailLog("Feed", "Get", "bus/feed/getfeed", "获取Feed信息", $"用户ID：{user_id}；cursor：{cursor}；count：{count}；状态：{status}；话题：{topic_id}；问答：{faq_id}；tab编码：{code}", ex.Message.ToString(), "GET");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();
@@ -408,9 +408,9 @@ namespace CommunityWebApi.Controllers
             }
         }
 
-        [Route("bus/feed/gettabdtl")]
+        [Route("bus/feed/getcomment")]
         [HttpGet]
-        public IHttpActionResult GetTabDtl(string user_id, int cursor, int count, int status, string code)
+        public IHttpActionResult GetComment(string user_id, string id, int cursor, int count, string code)
         {
             RetJsonModel result = new RetJsonModel();
             try
@@ -418,15 +418,19 @@ namespace CommunityWebApi.Controllers
                 //数据校验
                 RunVerify VD = new RunVerify();
                 VD.Run(user_id, new VerifyUser());
+                if(code == "comment")
+                    VD.Run(id, new VerifyFirstPath());
+                if (code == "reply")
+                    VD.Run(id, new VerifyComment());
 
                 FeedDomain FD = new FeedDomain();
-                result = FD.GetTabDtl(user_id, cursor, count, status, code);
+                result = FD.GetComment(user_id, id, cursor, count, code);
                 return Json(result);
             }
             catch (Exception ex)
             {
                 //记录失败日志
-                FunctionHelper.SaveFailLog("Feed", "GetTabDtl", "bus/feed/gettabdtl", "下发用户个人页某个tab信息", $"用户ID：{user_id}；cursor：{cursor}；count：{count}；状态：{status}；tab编码：{code}", ex.Message.ToString(), "GET");
+                FunctionHelper.SaveFailLog("Feed", "GetComment", "bus/feed/getcomment", "获取更多评论或回复", $"用户ID：{user_id}；被评论对象的ID：{id}；已获取：{cursor}；本次获取：{count}；评论类型{code}", ex.Message.ToString(), "GET");
 
                 result.status = 0;
                 result.time = FunctionHelper.GetTimestamp();

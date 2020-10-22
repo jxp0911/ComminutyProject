@@ -83,15 +83,29 @@ namespace CommunityWebApi.RealizeInterface
             GF.UpdateCount(db, typeId, favourCount, now);
         }
     }
-
+    /// <summary>
+    /// 下发卡片通用类
+    /// </summary>
     public class RunCard
     {
         public bool HasMore { get; set; }
         public List<NewFeedFirstReturnModel> Run(SqlSugarClient db, int cursor, int count, IFeed arg)
         {
-            HasMore = arg.hasMore;
             List<NewFeedFirstReturnModel> list = arg.GetFeedInfo(db, cursor, count);
+            HasMore = arg.hasMore;
             return list;
+        }
+    }
+
+    /// <summary>
+    /// 下发一级二级评论通用类
+    /// </summary>
+    public class RunComment
+    {
+        public dynamic Run(string userId, string id, int cursor, int count, IComment arg)
+        {
+            dynamic data = arg.GetComment(userId, id, cursor, count);
+            return data;
         }
     }
 }

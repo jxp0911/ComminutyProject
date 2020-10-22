@@ -227,7 +227,7 @@
     </Compile>
     <Compile Include="Interface\IFeed.cs" />
     <Compile Include="Interface\IGiveFavour.cs" />
-    <Compile Include="Interface\ITabDetail.cs" />
+    <Compile Include="Interface\IComment.cs" />
     <Compile Include="Interface\IVerifyData.cs" />
     <Compile Include="Interface\VerifyInterface.cs" />
     <Compile Include="Models\BUS_CAREERPATH_COMMENT.cs" />
@@ -261,6 +261,7 @@
     <Compile Include="Models\SYS_USER_PERMISSION.cs" />
     <Compile Include="Models\SYS_USER_ACCOUNT.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RealizeInterface\CommentClass.cs" />
     <Compile Include="RealizeInterface\FeedClass.cs" />
     <Compile Include="RealizeInterface\GiveFavour.cs" />
     <Compile Include="RealizeInterface\RunFunction.cs" />

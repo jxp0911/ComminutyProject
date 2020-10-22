@@ -1345,42 +1345,6 @@ namespace CommunityWebApi.Domains
         }
 
         /// <summary>
-        /// 简易feed
-        /// </summary>
-        /// <param name="userId"></param>
-        /// <param name="cursor"></param>
-        /// <param name="count"></param>
-        /// <param name="status"></param>
-        /// <param name="topicId"></param>
-        /// <param name="faqId"></param>
-        /// <param name="isOwn"></param>
-        /// <returns></returns>
-        public RetJsonModel GetSimpleFeed(string userId, int cursor, int count, int status, string topicId, string faqId, bool isOwn)
-        {
-            try
-            {
-                var db = DBContext.GetInstance;
-                FeedClass FC = new FeedClass(userId, status, isOwn, topicId, faqId);
-                List<NewFeedFirstReturnModel> data = FC.GetFeedInfo(db, cursor, count);
-                bool has_more = FC.hasMore;
-                RetJsonModel jsonModel = new RetJsonModel();
-                jsonModel.time = FunctionHelper.GetTimestamp();
-                jsonModel.status = 1;
-                jsonModel.msg = "成功";
-                jsonModel.data = new
-                {
-                    path_list=data,
-                    has_more
-                };
-                return jsonModel;
-            }
-            catch (Exception ex)
-            {
-                throw ex;
-            }
-        }
-
-        /// <summary>
         /// 下发所有tab信息
         /// </summary>
         /// <param name="userId"></param>
@@ -1425,8 +1389,18 @@ namespace CommunityWebApi.Domains
             }
         }
 
-
-        public RetJsonModel GetTabDtl(string userId, int cursor, int count, int status, string code)
+        /// <summary>
+        /// 根据code下发不同的卡片
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="cursor"></param>
+        /// <param name="count"></param>
+        /// <param name="status"></param>
+        /// <param name="topicId"></param>
+        /// <param name="faqId"></param>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        public RetJsonModel GetCardInfo(string userId, int cursor, int count, int status, string topicId, string faqId, string code)
         {
             try
             {
@@ -1441,6 +1415,11 @@ namespace CommunityWebApi.Domains
                 if (code == "T02")
                 {
                     ownfeed = new OwnFeedTab1Class(userId, status);
+                }
+                //简易feed
+                if (code == "F01")
+                {
+                    ownfeed = new FeedClass(userId, status, false, topicId, faqId);
                 }
                 RunCard run = new RunCard();
                 List<NewFeedFirstReturnModel> list = run.Run(db, cursor, count, ownfeed);
@@ -1463,5 +1442,43 @@ namespace CommunityWebApi.Domains
             }
         }
 
+        /// <summary>
+        /// 获取评论信息
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="id"></param>
+        /// <param name="cursor"></param>
+        /// <param name="count"></param>
+        /// <param name="code"></param>
+        /// <returns></returns>
+        public RetJsonModel GetComment(string userId, string id, int cursor, int count, string code)
+        {
+            try
+            {
+                IComment CC = null;
+                if (code == "comment")
+                {
+                    CC = new CommentClass();
+                }
+                if (code == "reply")
+                {
+                    CC = new ReplyClass();
+                }
+                RunComment run = new RunComment();
+                dynamic data = run.Run(userId, id, cursor, count, CC);
+
+                RetJsonModel jsonModel = new RetJsonModel();
+                jsonModel.time = FunctionHelper.GetTimestamp();
+                jsonModel.status = 1;
+                jsonModel.msg = "成功";
+                jsonModel.data = data;
+
+                return jsonModel;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
     }
 }
