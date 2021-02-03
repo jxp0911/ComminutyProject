@@ -10,7 +10,7 @@ namespace CommunityWebApi.Common
     public static class InterfaceArray
     {
         //存储所有ID校验的实例化字典
-        public static Dictionary<int, IVerifyData> DicVD = new Dictionary<int, IVerifyData>();
+        public static Dictionary<int, ISingleBus> DicVD = new Dictionary<int, ISingleBus>();
         //存储所有点赞实例化的字典
         public static Dictionary<int, IGiveFavour> DicGF = new Dictionary<int, IGiveFavour>();
         static InterfaceArray()

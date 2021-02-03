@@ -89,6 +89,7 @@ namespace CommunityWebApi.Controllers
             try
             {
                 int isPass = Convert.ToInt32(value.is_pass);
+                int isDel = Convert.ToInt32(value.is_del);
                 string UserId = Convert.ToString(value.user_id);
                 //数据校验
                 RunVerify VD = new RunVerify();
@@ -96,7 +97,7 @@ namespace CommunityWebApi.Controllers
 
                 List<string> firstId = JsonConvert.DeserializeObject<List<string>>(Convert.ToString(value.first_id));
                 FeedDomain FD = new FeedDomain();
-                result = FD.AuditPath(firstId, isPass, UserId);
+                result = FD.AuditPath(firstId, isPass, isDel, UserId);
                 return Json(result);
             }
             catch (Exception ex)
@@ -410,7 +411,7 @@ namespace CommunityWebApi.Controllers
 
         [Route("bus/feed/getcomment")]
         [HttpGet]
-        public IHttpActionResult GetComment(string user_id, string id, int cursor, int count, string code)
+        public IHttpActionResult GetComment(string user_id, string id, int cursor, int count, int code)
         {
             RetJsonModel result = new RetJsonModel();
             try
@@ -418,10 +419,12 @@ namespace CommunityWebApi.Controllers
                 //数据校验
                 RunVerify VD = new RunVerify();
                 VD.Run(user_id, new VerifyUser());
-                if(code == "comment")
+                if (code == 1)
                     VD.Run(id, new VerifyFirstPath());
-                if (code == "reply")
+                if (code == 2)
                     VD.Run(id, new VerifyComment());
+                if (code == 3)
+                    VD.Run(id, new VerifyReply());
 
                 FeedDomain FD = new FeedDomain();
                 result = FD.GetComment(user_id, id, cursor, count, code);

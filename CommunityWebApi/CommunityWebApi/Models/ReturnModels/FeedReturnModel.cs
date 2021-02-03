@@ -510,6 +510,9 @@ namespace CommunityWebApi.Models
         //创建时间
         [JsonProperty(PropertyName = "datetime_created")]
         public int TIMESTAMP { get; set; }
+        //状态
+        [JsonProperty(PropertyName = "status")]
+        public int STATUS { get; set; }
         //一级职业路径ID
         [JsonProperty(PropertyName = "id")]
         public string ID { get; set; }

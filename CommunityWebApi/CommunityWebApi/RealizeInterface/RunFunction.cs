@@ -15,7 +15,7 @@ namespace CommunityWebApi.RealizeInterface
     /// </summary>
     public class RunVerify
     {
-        public void Run(string id, IVerifyData arg)
+        public void Run(string id, ISingleBus arg)
         {
             try
             {
@@ -78,6 +78,11 @@ namespace CommunityWebApi.RealizeInterface
                 db.Insertable(model).ExecuteCommand();
 
                 favourCount = 1;
+
+                //保存通知
+                MessageClass MC = new MessageClass();
+                int msgType = (favourType == 1 || favourType == 2 || favourType == 3) ? 3 : 4;//3:对文章点赞；4:对评论点赞
+                MC.SaveMsg(db, userId, typeId, msgType, favourType);
             }
             //修改相应业务表的点赞数量
             GF.UpdateCount(db, typeId, favourCount, now);
@@ -101,6 +106,15 @@ namespace CommunityWebApi.RealizeInterface
     /// 下发一级二级评论通用类
     /// </summary>
     public class RunComment
+    {
+        public dynamic Run(string userId, string id, int cursor, int count, IComment arg)
+        {
+            dynamic data = arg.GetComment(userId, id, cursor, count);
+            return data;
+        }
+    }
+
+    public class RunMessage
     {
         public dynamic Run(string userId, string id, int cursor, int count, IComment arg)
         {

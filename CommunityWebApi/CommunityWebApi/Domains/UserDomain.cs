@@ -8,6 +8,7 @@ using CommunityWebApi.Models;
 using CommunityWebApi.RealizeInterface;
 using Entitys;
 using Newtonsoft.Json;
+using SqlSugar;
 
 namespace CommunityWebApi.Domains
 {
@@ -81,6 +82,7 @@ namespace CommunityWebApi.Domains
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
 
+                db.Ado.BeginTran();
                 BUS_CAREERPATH_COMMENT commentModel = new BUS_CAREERPATH_COMMENT();
                 commentModel.ID = Guid.NewGuid().ToString();
                 commentModel.DATETIME_CREATED = now;
@@ -92,12 +94,19 @@ namespace CommunityWebApi.Domains
                 commentModel.PATH_TYPE = pathType;
                 db.Insertable(commentModel).ExecuteCommand();
 
+                //保存通知
+                MessageClass MC = new MessageClass();
+                MC.SaveMsg(db, userId, pathId, 1, 1, content);
+
+                db.Ado.CommitTran();
+
                 jsonModel.status = 1;
                 jsonModel.msg = "评论成功";
                 return jsonModel;
             }
             catch (Exception ex)
             {
+                db.Ado.RollbackTran();
                 throw ex;
             }
         }
@@ -124,6 +133,7 @@ namespace CommunityWebApi.Domains
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
 
+                db.Ado.BeginTran();
                 BUS_COMMENT_REPLY replyModel = new BUS_COMMENT_REPLY();
                 replyModel.ID = Guid.NewGuid().ToString();
                 replyModel.DATETIME_CREATED = now;
@@ -134,8 +144,11 @@ namespace CommunityWebApi.Domains
                 replyModel.CONTENT = content;
                 replyModel.FROM_UID = userId;
                 replyModel.TO_UID = toUid;
-
                 db.Insertable(replyModel).ExecuteCommand();
+
+                //保存通知
+                MessageClass MC = new MessageClass();
+                MC.SaveMsg(db, userId, commentId, 2, 4, content);
 
                 jsonModel.status = 1;
                 jsonModel.msg = "回复成功";
@@ -143,6 +156,7 @@ namespace CommunityWebApi.Domains
             }
             catch (Exception ex)
             {
+                db.Ado.RollbackTran();
                 throw ex;
             }
         }
@@ -168,7 +182,7 @@ namespace CommunityWebApi.Domains
                 jsonModel.time = timestamp;
 
                 db.Ado.BeginTran();
-
+                //点赞
                 RunFavour RF = new RunFavour(favourType);
                 RF.Run(db, userId, typeId, favourType, now, timestamp);
 
@@ -317,6 +331,13 @@ namespace CommunityWebApi.Domains
                         secondModel.FAVOUR_COUNT = 0;
                         secondModel.VERSION_NO = secondInfo.VERSION_NO + 1;
                         db.Insertable(secondModel).ExecuteCommand();
+
+                        //将原来职业规划下面的三级规划绑定到新的二级规划下
+                        db.Updateable<BUS_CAREERPATH_THIRD>().SetColumns(x => new BUS_CAREERPATH_THIRD()
+                        {
+                            DATETIME_MODIFIED = now,
+                            SECOND_ID = secondModel.ID
+                        }).Where(x => x.SECOND_ID == secondInfo.ID && x.STATE == "A").ExecuteCommand();
 
                         //将原来的职业规划状态更新为已过期
                         db.Updateable<BUS_CAREERPATH_SECOND>().SetColumns(x => new BUS_CAREERPATH_SECOND()

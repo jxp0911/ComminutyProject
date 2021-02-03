@@ -224,9 +224,9 @@ namespace CommunityWebApi.Domains
         /// 审核/下架接口
         /// </summary>
         /// <param name="firstId">父级ID集合</param>
-        /// <param name="isPass">是否通过（0:未通过；1:通过）</param>
+        /// <param name="isPass">是否通过（0:未通过；1:通过；）</param>
         /// <returns></returns>
-        public RetJsonModel AuditPath(List<string> firstId,int isPass,string userId)
+        public RetJsonModel AuditPath(List<string> firstId,int isPass,int isDel,string userId)
         {
             var db = DBContext.GetInstance;
             try
@@ -245,24 +245,27 @@ namespace CommunityWebApi.Domains
                     jsonModel.msg = "您没有审核权限";
                     return jsonModel;
                 }
-
+                string state = isDel == 0 ? "D" : "A";
                 db.Ado.BeginTran();
                 db.Updateable<BUS_CAREERPATH_FIRST>().SetColumns(x => new BUS_CAREERPATH_FIRST()
                 {
                     STATUS = isPass,
-                    DATETIME_MODIFIED = now
+                    DATETIME_MODIFIED = now,
+                    STATE = state
                 }).Where(x => firstId.Contains(x.ID) && x.STATE == "A").ExecuteCommand();
 
                 db.Updateable<BUS_CAREERPATH_SECOND>().SetColumns(x => new BUS_CAREERPATH_SECOND()
                 {
                     STATUS = isPass,
-                    DATETIME_MODIFIED = now
+                    DATETIME_MODIFIED = now,
+                    STATE = state
                 }).Where(x => firstId.Contains(x.FIRST_ID) && x.STATE == "A").ExecuteCommand();
 
                 db.Updateable<BUS_CAREERPATH_THIRD>().SetColumns(x => new BUS_CAREERPATH_THIRD()
                 {
                     STATUS = isPass,
-                    DATETIME_MODIFIED = now
+                    DATETIME_MODIFIED = now,
+                    STATE = state
                 }).Where(x => firstId.Contains(x.FIRST_ID) && x.STATE == "A").ExecuteCommand();
                 db.Ado.CommitTran();
 
@@ -316,7 +319,7 @@ namespace CommunityWebApi.Domains
                     };
                     item.ModifyInfo = new
                     {
-                        modify_list = GetModifyInfo(userId, item.ID, 2, 0, 1, false, out bool hasHistory2),
+                        modify_list = GetModifyInfo(userId, item.ID, 0, 1, false, out bool hasHistory2),
                         has_history = hasHistory2
                     };
 
@@ -330,7 +333,7 @@ namespace CommunityWebApi.Domains
                         };
                         it.ModifyInfo = new
                         {
-                            modify_list = GetModifyInfo(userId, it.ID, 3, 0, 1, false, out bool hasHistory3),
+                            modify_list = GetModifyInfo(userId, it.ID, 0, 1, false, out bool hasHistory3),
                             has_history = hasHistory3
                         };
                     }
@@ -431,7 +434,7 @@ namespace CommunityWebApi.Domains
                 RetJsonModel jsonModel = new RetJsonModel();
                 jsonModel.time = timestamp;
 
-                List<ModifyPathModel> modifyList = GetModifyInfo(userId, pathId, pathClass, cursor, count, true, out bool hasMore);
+                List<ModifyPathModel> modifyList = GetModifyInfo(userId, pathId, cursor, count, true, out bool hasMore);
 
                 jsonModel.status = 1;
                 jsonModel.msg = "成功";
@@ -728,8 +731,8 @@ namespace CommunityWebApi.Domains
                     ID = a.ID,
                     CONTENT = a.CONTENT,
                     PUBLISH_TIME = a.TIMESTAMP_INT,
-                    PATH_ID = a.PATH_ID,
-                    FROM_UID = a.FROM_UID,
+                    PARENT_ID = a.PATH_ID,
+                    USER_ID = a.FROM_UID,
                     NICK_NAME = b.NICK_NAME,
                     FAVOUR_COUNT = a.FAVOUR_COUNT,
                     IS_FAVOUR = c.ID != null && c.ID != ""
@@ -758,11 +761,9 @@ namespace CommunityWebApi.Domains
                             CONTENT = a.CONTENT,
                             PUBLISH_TIME = a.TIMESTAMP_INT,
                             COMMENT_ID = a.COMMENT_ID,
-                            REPLY_ID = a.REPLY_ID,
-                            FROM_USER_ID = a.FROM_UID,
-                            TO_USER_ID = a.TO_UID,
-                            FROM_NICK_NAME = b.NICK_NAME,
-                            TO_NICK_NAME = c.NICK_NAME,
+                            PARENT_ID = a.REPLY_ID,
+                            USER_ID = a.TO_UID,
+                            NICK_NAME = b.NICK_NAME,
                             FAVOUR_COUNT = a.FAVOUR_COUNT,
                             IS_FAVOUR = d.ID != null && d.ID != ""
                         }).Take(1).ToList();
@@ -795,33 +796,16 @@ namespace CommunityWebApi.Domains
         /// <param name="isHistory">是否是查询历史修改</param>
         /// <param name="outParam">是否还有未查询到的</param>
         /// <returns></returns>
-        public List<ModifyPathModel> GetModifyInfo(string userId, string pathId,int pathClass,int cursor, int count, bool isHistory, out bool outParam)
+        public List<ModifyPathModel> GetModifyInfo(string userId, string pathId,int cursor, int count, bool isHistory, out bool outParam)
         {
             try
             {
                 var db = DBContext.GetInstance;
 
-                //根据pathId找到父级id，查询出第一个版本的id
-                string oldPathId = "";
-                if (pathClass == 2)
-                {
-                    oldPathId = db.Queryable<BUS_CAREERPATH_SECOND, BUS_CAREERPATH_SECOND>((a, b) => new object[]{
-                            JoinType.Inner,a.FIRST_ID==b.FIRST_ID
-                        }).Where((a, b) => a.ID == pathId && a.STATE == "A" && b.VERSION_NO == 1)
-                    .Select((a, b) => b.ID).First();
-                }
-                if (pathClass == 3)
-                {
-                    oldPathId = db.Queryable<BUS_CAREERPATH_THIRD, BUS_CAREERPATH_THIRD>((a, b) => new object[]{
-                            JoinType.Inner,a.SECOND_ID==b.SECOND_ID
-                        }).Where((a, b) => a.ID == pathId && a.STATE == "A" && b.VERSION_NO == 1)
-                    .Select((a, b) => b.ID).First();
-                }
-
                 //根据职业规划ID查询正在讨论中的修改
                 var modifyData = db.Queryable<BUS_MODIFY_PATH, SYS_USER_INFO>((a, b) => new object[]{
                     JoinType.Left,a.USER_ID==b.USER_ID && b.STATE=="A"
-                }).Where((a, b) => a.PATH_ID == oldPathId)
+                }).Where((a, b) => a.PATH_ID == pathId)
                 .WhereIF(isHistory == false, (a, b) => a.IS_MERGE == "N" && a.STATE == "A")
                 .WhereIF(isHistory == true, (a, b) => (a.IS_MERGE == "Y" || a.STATE == "D"))
                 .OrderBy((a, b) => a.DATETIME_CREATED, OrderByType.Desc)
@@ -847,7 +831,7 @@ namespace CommunityWebApi.Domains
 
                 //判断是否还有未查询出的记录
                 int historyCount = db.Queryable<BUS_MODIFY_PATH>()
-                        .Where(x => x.PATH_ID == oldPathId && (x.IS_MERGE == "Y" || x.STATE == "D"))
+                        .Where(x => x.PATH_ID == pathId && (x.IS_MERGE == "Y" || x.STATE == "D"))
                         .Count();
                 //查询历史过期信息
                 if (isHistory == true)
@@ -1449,20 +1433,24 @@ namespace CommunityWebApi.Domains
         /// <param name="id"></param>
         /// <param name="cursor"></param>
         /// <param name="count"></param>
-        /// <param name="code"></param>
+        /// <param name="code">1:职业规划下面的一级评论传;2:一级评论下面的二级;3:二级下面的递归</param>
         /// <returns></returns>
-        public RetJsonModel GetComment(string userId, string id, int cursor, int count, string code)
+        public RetJsonModel GetComment(string userId, string id, int cursor, int count, int code)
         {
             try
             {
                 IComment CC = null;
-                if (code == "comment")
+                if (code == 1)
                 {
                     CC = new CommentClass();
                 }
-                if (code == "reply")
+                else if (code == 2 || code ==3)
                 {
-                    CC = new ReplyClass();
+                    CC = new ReplyClass(code);
+                }
+                else
+                {
+                    throw new Exception("code参数值无效");
                 }
                 RunComment run = new RunComment();
                 dynamic data = run.Run(userId, id, cursor, count, CC);

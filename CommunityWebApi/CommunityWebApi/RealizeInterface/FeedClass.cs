@@ -12,7 +12,6 @@ namespace CommunityWebApi.RealizeInterface
     public class FeedClass : IFeed
     {
         public string topicId { get; }
-
         public string faqId { get; }
         public int status { get; }
         public bool isOwn { get; }
@@ -148,7 +147,10 @@ namespace CommunityWebApi.RealizeInterface
             }
         }
     }
-
+    
+    /// <summary>
+    /// 个人关注页
+    /// </summary>
     public class OwnFeedTab1Class : IFeed
     {
         public string topicId { get; }
@@ -214,7 +216,7 @@ namespace CommunityWebApi.RealizeInterface
                     //过滤查询出最新的count条数据
                     var firstData = db.Queryable<BUS_CAREERPATH_FIRST, SYS_USER_INFO>((a, b) => new object[]{
                         JoinType.Left,a.USER_ID==b.USER_ID && a.STATE==b.STATE,
-                    }).Where((a, b) => a.USER_ID == userId && a.STATE == "A" && a.STATUS == status)
+                    }).Where((a, b) => a.USER_ID == userId && a.STATE == "A")
                     .OrderBy((a, b) => a.DATETIME_CREATED, OrderByType.Desc)
                     .Select((a, b) => new NewFeedFirstReturnModel
                     {
@@ -223,14 +225,15 @@ namespace CommunityWebApi.RealizeInterface
                         TIMESTAMP = a.TIMESTAMP_INT,
                         TITLE = a.TITLE,
                         USER_ID = a.USER_ID,
-                        NICK_NAME = b.NICK_NAME
+                        NICK_NAME = b.NICK_NAME,
+                        STATUS = a.STATUS
                     }).Skip(cursor).Take(count).ToList();
 
                     List<string> firstId = firstData.Select(x => x.ID).ToList();
                     //查询出所有的二级信息
                     var secondData = db.Queryable<BUS_CAREERPATH_SECOND, SYS_USER_INFO>((a, b) => new object[]{
                         JoinType.Left,a.USER_ID==b.USER_ID && a.STATE==b.STATE
-                    }).Where((a, b) => a.STATE == "A" && firstId.Contains(a.FIRST_ID) && a.STATUS == status)
+                    }).Where((a, b) => a.STATE == "A" && firstId.Contains(a.FIRST_ID))
                     .Select((a, b) => new NewFeedSecondReturnModel
                     {
                         TIMESTAMP = a.TIMESTAMP_INT,
@@ -245,7 +248,7 @@ namespace CommunityWebApi.RealizeInterface
                     //查询出所有的三级信息
                     var thirdData = db.Queryable<BUS_CAREERPATH_THIRD, SYS_USER_INFO>((a, b) => new object[]{
                         JoinType.Left,a.USER_ID==b.USER_ID && a.STATE==b.STATE
-                    }).Where((a, b) => a.STATE == "A" && secondId.Contains(a.SECOND_ID) && a.STATUS == status)
+                    }).Where((a, b) => a.STATE == "A" && secondId.Contains(a.SECOND_ID))
                     .Select((a, b) => new NewFeedThirdReturnModel
                     {
                         TIMESTAMP = a.TIMESTAMP_INT,

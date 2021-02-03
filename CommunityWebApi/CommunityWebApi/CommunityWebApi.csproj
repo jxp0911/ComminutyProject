@@ -214,12 +214,14 @@
     <Compile Include="Controllers\FeedController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\LoginController.cs" />
+    <Compile Include="Controllers\MessageController.cs" />
     <Compile Include="Controllers\PlanController.cs" />
     <Compile Include="Controllers\UserController.cs" />
     <Compile Include="Controllers\ValuesController.cs" />
     <Compile Include="Domains\BackManageDomain.cs" />
     <Compile Include="Domains\FeedDomain.cs" />
     <Compile Include="Domains\LoginDomain.cs" />
+    <Compile Include="Domains\MessageDomain.cs" />
     <Compile Include="Domains\PlanDomain.cs" />
     <Compile Include="Domains\UserDomain.cs" />
     <Compile Include="Global.asax.cs">
@@ -228,6 +230,7 @@
     <Compile Include="Interface\IFeed.cs" />
     <Compile Include="Interface\IGiveFavour.cs" />
     <Compile Include="Interface\IComment.cs" />
+    <Compile Include="Interface\IMessage.cs" />
     <Compile Include="Interface\IVerifyData.cs" />
     <Compile Include="Interface\VerifyInterface.cs" />
     <Compile Include="Models\BUS_CAREERPATH_COMMENT.cs" />
@@ -249,13 +252,16 @@
     <Compile Include="Models\MAP_USER_CARREERPATH.cs" />
     <Compile Include="Models\ReceiveModel\FeedPathModel.cs" />
     <Compile Include="Models\ReceiveModel\PlanReceiveModel.cs" />
+    <Compile Include="Models\ReturnModels\BusinessModel.cs" />
     <Compile Include="Models\ReturnModels\CommentReturnModel.cs" />
+    <Compile Include="Models\ReturnModels\MsgReturnModel.cs" />
     <Compile Include="Models\ReturnModels\OwnTabsModel.cs" />
     <Compile Include="Models\ReturnModels\RetJsonModel.cs" />
     <Compile Include="Models\ReturnModels\FeedReturnModel.cs" />
     <Compile Include="Models\ReturnModels\LoginReturnModel.cs" />
     <Compile Include="Models\ReturnModels\TopicsRetornModel.cs" />
     <Compile Include="Models\SYS_FAIL_LOG.cs" />
+    <Compile Include="Models\SYS_MESSAGE_INFO.cs" />
     <Compile Include="Models\SYS_TABS_INFO.cs" />
     <Compile Include="Models\SYS_USER_INFO.cs" />
     <Compile Include="Models\SYS_USER_PERMISSION.cs" />
@@ -264,6 +270,7 @@
     <Compile Include="RealizeInterface\CommentClass.cs" />
     <Compile Include="RealizeInterface\FeedClass.cs" />
     <Compile Include="RealizeInterface\GiveFavour.cs" />
+    <Compile Include="RealizeInterface\MessageClass.cs" />
     <Compile Include="RealizeInterface\RunFunction.cs" />
     <Compile Include="RealizeInterface\VerifyData.cs" />
   </ItemGroup>
